@@ -18,7 +18,7 @@
         icon="i-lucide-plus"
         to="/"
         class="lg:hidden"
-        aria-label="New chat"
+        aria-label="新建会话"
       />
     </template>
   </UDashboardNavbar>

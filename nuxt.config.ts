@@ -20,6 +20,10 @@ export default defineNuxtConfig({
     viewTransition: true
   },
 
+  colorMode: {
+    preference: 'dark'
+  },
+
   compatibilityDate: '2024-07-11',
 
   nitro: {
@@ -31,6 +35,13 @@ export default defineNuxtConfig({
   hub: {
     db: 'sqlite',
     blob: true
+  },
+
+  fonts: {
+    providers: {
+      google: false,
+      googleicons: false
+    }
   },
 
   vite: {

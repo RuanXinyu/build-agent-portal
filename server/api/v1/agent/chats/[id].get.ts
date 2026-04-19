@@ -15,6 +15,7 @@ const mockChats: Record<string, {
   'mock-1': {
     chat: new Chat({
       id: 'mock-1',
+      chat_id: 'mock-1',
       title: '【Text】纯文本对话',
       userId: 'mock-user',
       visibility: 'private',
@@ -42,6 +43,7 @@ const mockChats: Record<string, {
   'mock-2': {
     chat: new Chat({
       id: 'mock-2',
+      chat_id: 'mock-2',
       title: '【Reasoning】带思考链的回答',
       userId: 'mock-user',
       visibility: 'private',
@@ -72,6 +74,7 @@ const mockChats: Record<string, {
   'mock-3': {
     chat: new Chat({
       id: 'mock-3',
+      chat_id: 'mock-3',
       title: '【File】带图片附件的对话',
       userId: 'mock-user',
       visibility: 'public',
@@ -119,6 +122,7 @@ const mockChats: Record<string, {
   'mock-4': {
     chat: new Chat({
       id: 'mock-4',
+      chat_id: 'mock-4',
       title: '【Source URL】带来源引用的回答',
       userId: 'mock-user',
       visibility: 'private',
@@ -146,63 +150,11 @@ const mockChats: Record<string, {
     ]
   },
 
-  // Text + Tool invocation (工具调用 - 天气)
-  'mock-5': {
-    chat: new Chat({
-      id: 'mock-5',
-      title: '【Tool】带工具调用的对话（天气查询）',
-      userId: 'mock-user',
-      visibility: 'private',
-      createdAt: lastMonth
-    }),
-    messages: [
-      new Message({
-        id: 'msg-5-1',
-        chatId: 'mock-5',
-        role: 'user',
-        parts: [{ type: 'text', text: 'What\'s the weather like in Beijing?' }],
-        createdAt: lastMonth
-      }),
-      new Message({
-        id: 'msg-5-2',
-        chatId: 'mock-5',
-        role: 'assistant',
-        parts: [
-          { type: 'step-start' },
-          { type: 'text', text: 'Let me check the weather in Beijing for you.' },
-          {
-            type: 'tool-getWeather',
-            toolCallId: 'call-weather-1',
-            state: 'output-available',
-            input: { location: 'Beijing' },
-            output: {
-              location: 'Beijing',
-              temperature: 22,
-              temperatureHigh: 26,
-              temperatureLow: 15,
-              condition: { text: 'Partly Cloudy', icon: 'i-lucide-cloud-sun' },
-              humidity: 45,
-              windSpeed: 12,
-              dailyForecast: [
-                { day: 'Today', high: 26, low: 15, condition: { text: 'Partly Cloudy', icon: 'i-lucide-cloud-sun' } },
-                { day: 'Tomorrow', high: 28, low: 17, condition: { text: 'Sunny', icon: 'i-lucide-sun' } },
-                { day: 'Thu', high: 24, low: 14, condition: { text: 'Cloudy', icon: 'i-lucide-cloud' } },
-                { day: 'Fri', high: 20, low: 12, condition: { text: 'Rainy', icon: 'i-lucide-cloud-rain' } },
-                { day: 'Sat', high: 23, low: 13, condition: { text: 'Sunny', icon: 'i-lucide-sun' } }
-              ]
-            }
-          },
-          { type: 'text', text: 'Here\'s the weather for **Beijing**:\n\n- **Temperature**: 22°C (High: 26°C / Low: 15°C)\n- **Condition**: Partly Cloudy ☁️\n- **Humidity**: 45%\n- **Wind**: 12 km/h\n\nThe rest of the week looks mixed with some rain expected on Friday.' }
-        ],
-        createdAt: lastMonth
-      })
-    ]
-  },
-
   // Multi-step with Step-Start + Source Document + Reasoning + Tool (综合)
   'mock-6': {
     chat: new Chat({
       id: 'mock-6',
+      chat_id: 'mock-6',
       title: '【综合】多步骤工具调用 + 思考链 + 来源文档 + 图表',
       userId: 'mock-user',
       visibility: 'public',

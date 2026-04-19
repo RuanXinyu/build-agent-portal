@@ -16,18 +16,11 @@ const greeting = computed(() => {
   return name ? `${timeGreeting}, ${name}` : `${timeGreeting}`
 })
 
-const {
-  dropzoneRef,
-  dragging,
-  open,
-  files,
-  uploading,
-  uploadedFiles,
-  removeFile,
-  clearFiles
-} = useFileUploadWithStatus(chatId)
-
 const { csrf, headerName } = useCsrf()
+
+async function createQuickChat(prompt: string) {
+  input.value = prompt
+}
 
 async function createChat(prompt: string) {
   input.value = prompt
@@ -49,7 +42,6 @@ async function createChat(prompt: string) {
 
 async function onSubmit() {
   await createChat(input.value)
-  clearFiles()
 }
 
 const quickChats = [
@@ -79,50 +71,41 @@ const quickChats = [
     </template>
 
     <template #body>
-      <div ref="dropzoneRef" class="flex flex-1">
-        <DragDropOverlay :show="dragging" />
+      <UContainer class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8">
+        <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
+          {{ greeting }}
+        </h1>
 
-        <UContainer class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8">
-          <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
-            {{ greeting }}
-          </h1>
+        <UChatPrompt
+          v-model="input"
+          :status="loading ? 'streaming' : 'ready'"
+          class="[view-transition-name:chat-prompt]"
+          variant="subtle"
+          :ui="{ base: 'px-1.5' }"
+          @submit="onSubmit"
+        >
+          <template #footer>
+            <div class="flex items-center gap-1">
+            </div>
 
-          <UChatPrompt
-            v-model="input"
-            :status="loading ? 'streaming' : 'ready'"
-            :disabled="uploading"
-            class="[view-transition-name:chat-prompt]"
-            variant="subtle"
-            :ui="{ base: 'px-1.5' }"
-            @submit="onSubmit"
-          >
-            <template v-if="files.length > 0" #header>
-              <ChatFiles :files="files" @remove="removeFile" />
-            </template>
+            <UChatPromptSubmit color="neutral" size="sm" />
+          </template>
+        </UChatPrompt>
 
-            <template #footer>
-              <div class="flex items-center gap-1">
-              </div>
-
-              <UChatPromptSubmit color="neutral" size="sm" :disabled="uploading" />
-            </template>
-          </UChatPrompt>
-
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              v-for="quickChat in quickChats"
-              :key="quickChat.label"
-              :icon="quickChat.icon"
-              :label="quickChat.label"
-              size="sm"
-              color="neutral"
-              variant="outline"
-              class="rounded-full"
-              @click="createChat(quickChat.label)"
-            />
-          </div>
-        </UContainer>
-      </div>
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            v-for="quickChat in quickChats"
+            :key="quickChat.label"
+            :icon="quickChat.icon"
+            :label="quickChat.label"
+            size="sm"
+            color="neutral"
+            variant="outline"
+            class="rounded-full"
+            @click="createQuickChat(quickChat.label)"
+          />
+        </div>
+      </UContainer>
     </template>
   </UDashboardPanel>
 </template>

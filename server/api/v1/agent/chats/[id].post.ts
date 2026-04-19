@@ -24,10 +24,7 @@ export default defineEventHandler(async (event) => {
     id: z.string()
   }).parse)
 
-  const { model, messages } = await readValidatedBody(event, z.object({
-    model: z.string().refine(value => MODELS.some(m => m.value === value), {
-      message: 'Invalid model'
-    }),
+  const { messages } = await readValidatedBody(event, z.object({
     messages: z.array(z.custom<UIMessage>())
   }).parse)
 
@@ -102,7 +99,6 @@ export default defineEventHandler(async (event) => {
         messages: await convertToModelMessages(messages),
         tools: {
           chart: chartTool,
-          weather: weatherTool,
           ...(model.startsWith('anthropic/') && { web_search: anthropic.tools.webSearch_20250305() }),
           ...(model.startsWith('openai/') && { web_search: openai.tools.webSearch() })
           // TODO: enable once AI SDK supports combining provider-defined tools with custom tools

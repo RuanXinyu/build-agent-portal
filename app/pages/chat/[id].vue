@@ -5,7 +5,6 @@ import type { UIMessage } from 'ai'
 
 const route = useRoute()
 const toast = useToast()
-const { model } = useModels()
 const { csrf, headerName } = useCsrf()
 
 const { data } = await useFetch(`/api/v1/agent/chats/${route.params.id}`, {
@@ -14,17 +13,6 @@ const { data } = await useFetch(`/api/v1/agent/chats/${route.params.id}`, {
 
 const isOwner = computed(() => data.value?.isOwner ?? false)
 const visibility = ref<'public' | 'private'>(data.value?.visibility ?? 'private')
-
-const {
-  dropzoneRef,
-  dragging,
-  open,
-  files,
-  uploading,
-  uploadedFiles,
-  removeFile,
-  clearFiles
-} = useFileUploadWithStatus(route.params.id as string)
 
 const { data: votes } = await useLazyFetch(`/api/v1/agent/chats/${route.params.id}/votes`, {
   immediate: isOwner.value
@@ -39,7 +27,7 @@ const chat = new Chat({
     api: `/api/v1/agent/chats/${data.value?.id}`,
     headers: { [headerName]: csrf },
     body: {
-      model: model.value
+      
     }
   }),
   onData: (dataPart) => {
@@ -60,13 +48,11 @@ const chat = new Chat({
 
 async function handleSubmit(e: Event) {
   e.preventDefault()
-  if (input.value.trim() && !uploading.value) {
+  if (input.value.trim()) {
     chat.sendMessage({
-      text: input.value,
-      files: uploadedFiles.value.length > 0 ? uploadedFiles.value : undefined
+      text: input.value
     })
     input.value = ''
-    clearFiles()
   }
 }
 
@@ -153,78 +139,61 @@ onMounted(() => {
     </template>
 
     <template #body>
-      <div ref="dropzoneRef" class="flex flex-1">
-        <DragDropOverlay v-if="isOwner" :show="dragging" />
+      <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
+        <UChatMessages
+          should-auto-scroll
+          :messages="chat.messages"
+          :status="chat.status"
+          :spacing-offset="isOwner ? 160 : 0"
+          class="pt-(--ui-header-height) pb-4 sm:pb-6"
+        >
+          <template #indicator>
+            <div class="flex items-center gap-1.5">
+              <ChatIndicator />
 
-        <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
-          <UChatMessages
-            should-auto-scroll
-            :messages="chat.messages"
-            :status="chat.status"
-            :spacing-offset="isOwner ? 160 : 0"
-            class="pt-(--ui-header-height) pb-4 sm:pb-6"
-          >
-            <template #indicator>
-              <div class="flex items-center gap-1.5">
-                <ChatIndicator />
+              <UChatShimmer text="Thinking..." class="text-sm" />
+            </div>
+          </template>
 
-                <UChatShimmer text="Thinking..." class="text-sm" />
-              </div>
-            </template>
+          <template #content="{ message }">
+            <ChatMessageContent
+              :message="message"
+              :editing="false"
+              @cancel-edit="editingMessageId = null"
+            />
+          </template>
 
-            <template #files="{ message, parts }">
-              <ChatFilePreview
-                v-for="(part, index) in parts"
-                :key="`${message.id}-${index}`"
-                :name="getFileName(part.url)"
-                :type="part.mediaType"
-                :preview-url="part.url"
-                size="3xl"
-              />
-            </template>
+          <template v-if="isOwner" #actions="{ message }">
+            <ChatMessageActions
+              :message="message"
+              :streaming="chat.status === 'streaming' && message.id === chat.messages[chat.messages.length - 1]?.id"
+              :vote="getVote(message.id)"
+              @vote="(_message, isUpvoted) => vote(_message, isUpvoted)"
+            />
+          </template>
+        </UChatMessages>
 
-            <template #content="{ message }">
-              <ChatMessageContent
-                :message="message"
-                :editing="false"
-                @cancel-edit="editingMessageId = null"
-              />
-            </template>
+        <UChatPrompt
+          v-if="isOwner"
+          v-model="input"
+          :error="chat.error"
+          variant="subtle"
+          class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10"
+          :ui="{ base: 'px-1.5' }"
+          @submit="handleSubmit"
+        >
+          <template #footer>
+            <div class="flex items-center gap-1">
+            </div>
 
-            <template v-if="isOwner" #actions="{ message }">
-              <ChatMessageActions
-                :message="message"
-                :streaming="chat.status === 'streaming' && message.id === chat.messages[chat.messages.length - 1]?.id"
-                :vote="getVote(message.id)"
-                @vote="(_message, isUpvoted) => vote(_message, isUpvoted)"
-              />
-            </template>
-          </UChatMessages>
-
-          <UChatPrompt
-            v-if="isOwner"
-            v-model="input"
-            :error="chat.error"
-            :disabled="uploading"
-            variant="subtle"
-            class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10"
-            :ui="{ base: 'px-1.5' }"
-            @submit="handleSubmit"
-          >
-            <template #footer>
-              <div class="flex items-center gap-1">
-              </div>
-
-              <UChatPromptSubmit
-                :status="chat.status"
-                :disabled="uploading"
-                color="neutral"
-                size="sm"
-              />
-            </template>
-          </UChatPrompt>
-        </UContainer>
-      </div>
+            <UChatPromptSubmit
+              :status="chat.status"
+              color="neutral"
+              size="sm"
+            />
+          </template>
+        </UChatPrompt>
+      </UContainer>
     </template>
   </UDashboardPanel>
 

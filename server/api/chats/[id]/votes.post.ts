@@ -1,61 +1,32 @@
-import { db, schema } from 'hub:db'
-import { and, eq } from 'drizzle-orm'
+import { Vote } from '#shared/vote'
 import { z } from 'zod'
 
-export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+const mockVotes: Vote[] = [
+  new Vote({ chatId: 'mock-1', messageId: 'msg-1-2', isUpvoted: true }),
+  new Vote({ chatId: 'mock-3', messageId: 'msg-3-2', isUpvoted: false })
+]
 
-  const { id } = await getValidatedRouterParams(event, z.object({
-    id: z.string()
-  }).parse)
+export default defineEventHandler(async (event) => {
+  const id = getRouterParam(event, 'id')
+  if (!id) {
+    throw createError({ statusCode: 400, statusMessage: 'Missing chat id' })
+  }
 
   const { messageId, isUpvoted } = await readValidatedBody(event, z.object({
     messageId: z.string(),
     isUpvoted: z.boolean().optional()
   }).parse)
 
-  const chat = await db.query.chats.findFirst({
-    where: () => and(
-      eq(schema.chats.id, id as string),
-      eq(schema.chats.userId, session.user?.id || session.id)
-    )
-  })
-
-  if (!chat) {
-    throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
-  }
-
-  const message = await db.query.messages.findFirst({
-    where: () => and(
-      eq(schema.messages.id, messageId),
-      eq(schema.messages.chatId, id as string)
-    )
-  })
-
-  if (!message) {
-    throw createError({ statusCode: 404, statusMessage: 'Message not found' })
-  }
-
-  if (message.role !== 'assistant') {
-    throw createError({ statusCode: 400, statusMessage: 'Can only vote on assistant messages' })
-  }
+  const idx = mockVotes.findIndex(v => v.chatId === id && v.messageId === messageId)
 
   if (isUpvoted === undefined) {
-    await db.delete(schema.votes).where(
-      and(
-        eq(schema.votes.chatId, id as string),
-        eq(schema.votes.messageId, messageId)
-      )
-    )
+    if (idx !== -1) mockVotes.splice(idx, 1)
   } else {
-    await db.insert(schema.votes).values({
-      chatId: id as string,
-      messageId,
-      isUpvoted
-    }).onConflictDoUpdate({
-      target: [schema.votes.chatId, schema.votes.messageId],
-      set: { isUpvoted }
-    })
+    if (idx !== -1) {
+      mockVotes[idx]!.isUpvoted = isUpvoted
+    } else {
+      mockVotes.push(new Vote({ chatId: id, messageId, isUpvoted }))
+    }
   }
 
   return { chatId: id, messageId, isUpvoted }

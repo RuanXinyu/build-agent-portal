@@ -1,24 +1,15 @@
-import { db, schema } from 'hub:db'
-import { and, eq } from 'drizzle-orm'
-import { z } from 'zod'
+import { Vote } from '#shared/vote'
 
-export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+const mockVotes: Vote[] = [
+  new Vote({ chatId: 'mock-1', messageId: 'msg-1-2', isUpvoted: true }),
+  new Vote({ chatId: 'mock-3', messageId: 'msg-3-2', isUpvoted: false })
+]
 
-  const { id } = await getValidatedRouterParams(event, z.object({
-    id: z.string()
-  }).parse)
-
-  const chat = await db.query.chats.findFirst({
-    where: () => and(
-      eq(schema.chats.id, id as string),
-      eq(schema.chats.userId, session.user?.id || session.id)
-    )
-  })
-
-  if (!chat) {
-    throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
+export default defineEventHandler((event) => {
+  const id = getRouterParam(event, 'id')
+  if (!id) {
+    throw createError({ statusCode: 400, statusMessage: 'Missing chat id' })
   }
 
-  return await db.select().from(schema.votes).where(eq(schema.votes.chatId, id as string))
+  return mockVotes.filter(v => v.chatId === id)
 })

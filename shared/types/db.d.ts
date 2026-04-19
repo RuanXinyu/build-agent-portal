@@ -1,5 +1,7 @@
-import type { chats, messages, votes } from 'hub:db:schema'
+import type { Chat } from '#shared/chat'
+import type { Message } from '#shared/message'
+import type { Vote } from '#shared/vote'
 
-export type Chat = typeof chats.$inferSelect
-export type Message = typeof messages.$inferSelect
-export type Vote = typeof votes.$inferSelect
+export type { Chat }
+export type { Message }
+export type { Vote }

@@ -33,10 +33,6 @@ const emit = defineEmits<{
         v-if="getToolName(part) === 'chart'"
         :invocation="{ ...(part as ChartUIToolInvocation) }"
       />
-      <ChatToolWeather
-        v-else-if="getToolName(part) === 'weather'"
-        :invocation="{ ...(part as WeatherUIToolInvocation) }"
-      />
       <UChatTool
         v-else-if="getToolName(part) === 'web_search' || getToolName(part) === 'google_search'"
         :text="isToolStreaming(part) ? 'Searching the web...' : 'Searched the web'"
@@ -55,14 +51,7 @@ const emit = defineEmits<{
         :streaming="isPartStreaming(part)"
       />
       <template v-else-if="message.role === 'user'">
-        <ChatMessageEdit
-          v-if="editing"
-          :message="message"
-          :text="part.text"
-          @save="(msg, text) => emit('save', msg, text)"
-          @cancel="emit('cancelEdit')"
-        />
-        <p v-else class="whitespace-pre-wrap">
+        <p class="whitespace-pre-wrap">
           {{ part.text }}
         </p>
       </template>

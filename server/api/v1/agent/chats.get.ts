@@ -9,6 +9,7 @@ const lastMonth = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)
 const mockChats: Chat[] = [
   new Chat({
     id: 'mock-1',
+    chat_id: 'mock-1',
     title: '【Text】纯文本对话',
     userId: 'mock-user',
     visibility: 'private',
@@ -16,6 +17,7 @@ const mockChats: Chat[] = [
   }),
   new Chat({
     id: 'mock-2',
+    chat_id: 'mock-2',
     title: '【Reasoning】带思考链的回答',
     userId: 'mock-user',
     visibility: 'private',
@@ -23,6 +25,7 @@ const mockChats: Chat[] = [
   }),
   new Chat({
     id: 'mock-3',
+    chat_id: 'mock-3',
     title: '【File】带图片附件的对话',
     userId: 'mock-user',
     visibility: 'public',
@@ -30,6 +33,7 @@ const mockChats: Chat[] = [
   }),
   new Chat({
     id: 'mock-4',
+    chat_id: 'mock-4',
     title: '【Source URL】带来源引用的回答',
     userId: 'mock-user',
     visibility: 'private',
@@ -37,6 +41,7 @@ const mockChats: Chat[] = [
   }),
   new Chat({
     id: 'mock-5',
+    chat_id: 'mock-5',
     title: '【Tool】带工具调用的对话（天气查询）',
     userId: 'mock-user',
     visibility: 'private',
@@ -44,6 +49,7 @@ const mockChats: Chat[] = [
   }),
   new Chat({
     id: 'mock-6',
+    chat_id: 'mock-6',
     title: '【综合】多步骤工具调用 + 思考链 + 来源文档 + 图表',
     userId: 'mock-user',
     visibility: 'public',

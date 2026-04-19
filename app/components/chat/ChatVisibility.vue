@@ -42,7 +42,7 @@ async function updateVisibility(value: 'public' | 'private') {
   emit('update:visibility', value)
 
   try {
-    await $fetch(`/api/chats/${props.chatId}/visibility`, {
+    await $fetch(`/api/v1/agent/chats/${props.chatId}/visibility`, {
       method: 'PATCH',
       headers: { [headerName]: csrf },
       body: { visibility: value }

@@ -11,17 +11,17 @@ const open = ref(false)
 
 const deleteModal = overlay.create(LazyModalConfirm, {
   props: {
-    title: 'Delete chat',
-    description: 'Are you sure you want to delete this chat? This cannot be undone.'
+    title: '删除会话',
+    description: '确定要删除这个会话吗？删除后无法恢复。'
   }
 })
 
-const { data: chats, refresh: refreshChats } = await useFetch('/api/chats', {
+const { data: chats, refresh: refreshChats } = await useFetch('/api/v1/agent/chats', {
   key: 'chats',
   transform: data => data.map(chat => ({
-    id: chat.id,
-    label: chat.title || 'Untitled',
-    to: `/chat/${chat.id}`,
+    id: chat.chat_id,
+    label: chat.title || '未命名会话',
+    to: `/chat/${chat.chat_id}`,
     icon: 'i-lucide-message-circle',
     createdAt: chat.createdAt
   }))
@@ -31,7 +31,7 @@ onNuxtReady(async () => {
   const first10 = (chats.value || []).slice(0, 10)
   for (const chat of first10) {
     // prefetch the chat and let the browser cache it
-    await $fetch(`/api/chats/${chat.id}`)
+    await $fetch(`/api/v1/agent/chats/${chat.chat_id}`)
   }
 })
 
@@ -62,14 +62,14 @@ async function deleteChat(id: string) {
     return
   }
 
-  await $fetch(`/api/chats/${id}`, {
+  await $fetch(`/api/v1/agent/chats/${id}`, {
     method: 'DELETE',
     headers: { [headerName]: csrf }
   })
 
   toast.add({
-    title: 'Chat deleted',
-    description: 'Your chat has been deleted',
+    title: '会话删除',
+    description: '会话已删除',
     icon: 'i-lucide-trash'
   })
 
@@ -100,18 +100,14 @@ defineShortcuts({
       <template #header="{ collapsed }">
         <NuxtLink to="/" class="flex items-end gap-0.5">
           <Logo class="h-8 w-auto shrink-0" />
-          <span v-if="!collapsed" class="text-xl font-bold text-highlighted">Chat</span>
+          <span v-if="!collapsed" class="text-xl font-bold text-highlighted">BuildMateChat</span>
         </NuxtLink>
-
-        <div v-if="!collapsed" class="flex items-center gap-1.5 ms-auto">
-          <UDashboardSearchButton collapsed />
-        </div>
       </template>
 
       <template #default="{ collapsed }">
         <div class="flex flex-col gap-1.5">
           <UButton
-            v-bind="collapsed ? { icon: 'i-lucide-plus' } : { label: 'New chat' }"
+            v-bind="collapsed ? { icon: 'i-lucide-plus' } : { label: '新会话' }"
             variant="soft"
             block
             to="/"
@@ -138,9 +134,9 @@ defineShortcuts({
                 variant="ghost"
                 size="xs"
                 class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
-                aria-label="Delete chat"
+                aria-label="删除会话"
                 tabindex="-1"
-                @click.stop.prevent="deleteChat((item as any).id)"
+                @click.stop.prevent="deleteChat((item as any).chat_id)"
               />
             </div>
           </template>
@@ -151,7 +147,7 @@ defineShortcuts({
         <UserMenu v-if="loggedIn" :collapsed="collapsed" />
         <UButton
           v-else
-          :label="collapsed ? '' : 'Login with GitHub'"
+          :label="collapsed ? '' : '登录'"
           icon="i-simple-icons-github"
           color="neutral"
           variant="ghost"
@@ -160,18 +156,6 @@ defineShortcuts({
         />
       </template>
     </UDashboardSidebar>
-
-    <UDashboardSearch
-      placeholder="Search chats..."
-      :groups="[{
-        id: 'links',
-        items: [{
-          label: 'New chat',
-          to: '/',
-          icon: 'i-lucide-square-pen'
-        }]
-      }, ...groups]"
-    />
 
     <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow min-w-0 overflow-hidden">
       <slot />

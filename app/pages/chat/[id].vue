@@ -8,7 +8,7 @@ const toast = useToast()
 const { model } = useModels()
 const { csrf, headerName } = useCsrf()
 
-const { data } = await useFetch(`/api/chats/${route.params.id}`, {
+const { data } = await useFetch(`/api/v1/agent/chats/${route.params.id}`, {
   cache: 'force-cache'
 })
 
@@ -26,7 +26,7 @@ const {
   clearFiles
 } = useFileUploadWithStatus(route.params.id as string)
 
-const { data: votes } = await useLazyFetch(`/api/chats/${route.params.id}/votes`, {
+const { data: votes } = await useLazyFetch(`/api/v1/agent/chats/${route.params.id}/votes`, {
   immediate: isOwner.value
 })
 
@@ -36,7 +36,7 @@ const chat = new Chat({
   id: data.value?.id,
   messages: data.value?.messages,
   transport: new DefaultChatTransport({
-    api: `/api/chats/${data.value?.id}`,
+    api: `/api/v1/agent/chats/${data.value?.id}`,
     headers: { [headerName]: csrf },
     body: {
       model: model.value
@@ -78,25 +78,9 @@ function startEdit(message: UIMessage) {
   editingMessageId.value = message.id
 }
 
-async function saveEdit(message: UIMessage, text: string) {
-  try {
-    await $fetch(`/api/chats/${data.value!.id}/messages`, {
-      method: 'DELETE',
-      headers: { [headerName]: csrf },
-      body: { messageId: message.id, type: 'edit' }
-    })
-  } catch {
-    toast.add({ description: 'Failed to save edit.', icon: 'i-lucide-alert-circle', color: 'error' })
-    return
-  }
-
-  editingMessageId.value = null
-  chat.sendMessage({ text, messageId: message.id })
-}
-
 async function regenerateMessage(message: UIMessage) {
   try {
-    await $fetch(`/api/chats/${data.value!.id}/messages`, {
+    await $fetch(`/api/v1/agent/chats/${data.value!.id}/messages`, {
       method: 'DELETE',
       headers: { [headerName]: csrf },
       body: { messageId: message.id, type: 'regenerate' }
@@ -128,7 +112,7 @@ async function vote(message: UIMessage, isUpvoted: boolean) {
       ]
 
   try {
-    await $fetch(`/api/chats/${data.value!.id}/votes`, {
+    await $fetch(`/api/v1/agent/chats/${data.value!.id}/votes`, {
       method: 'POST',
       headers: { [headerName]: csrf },
       body: next === null ? { messageId: message.id } : { messageId: message.id, isUpvoted: next }
@@ -202,8 +186,7 @@ onMounted(() => {
             <template #content="{ message }">
               <ChatMessageContent
                 :message="message"
-                :editing="isOwner && editingMessageId === message.id"
-                @save="saveEdit"
+                :editing="false"
                 @cancel-edit="editingMessageId = null"
               />
             </template>
@@ -212,11 +195,8 @@ onMounted(() => {
               <ChatMessageActions
                 :message="message"
                 :streaming="chat.status === 'streaming' && message.id === chat.messages[chat.messages.length - 1]?.id"
-                :editing="editingMessageId === message.id"
                 :vote="getVote(message.id)"
                 @vote="(_message, isUpvoted) => vote(_message, isUpvoted)"
-                @edit="startEdit"
-                @regenerate="regenerateMessage"
               />
             </template>
           </UChatMessages>
@@ -231,15 +211,8 @@ onMounted(() => {
             :ui="{ base: 'px-1.5' }"
             @submit="handleSubmit"
           >
-            <template v-if="files.length > 0" #header>
-              <ChatFiles :files="files" @remove="removeFile" />
-            </template>
-
             <template #footer>
               <div class="flex items-center gap-1">
-                <ChatFileUploadButton :open="open" />
-
-                <ModelSelect />
               </div>
 
               <UChatPromptSubmit
@@ -247,8 +220,6 @@ onMounted(() => {
                 :disabled="uploading"
                 color="neutral"
                 size="sm"
-                @stop="chat.stop()"
-                @reload="chat.regenerate()"
               />
             </template>
           </UChatPrompt>

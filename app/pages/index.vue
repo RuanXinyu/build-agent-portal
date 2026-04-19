@@ -7,9 +7,9 @@ const { user } = useUserSession()
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
-  let timeGreeting = 'Good evening'
-  if (hour < 12) timeGreeting = 'Good morning'
-  else if (hour < 18) timeGreeting = 'Good afternoon'
+  let timeGreeting = '晚上好'
+  if (hour < 12) timeGreeting = '早上好'
+  else if (hour < 18) timeGreeting = '下午好'
 
   const name = user.value?.name?.split(' ')[0] || user.value?.username
 
@@ -33,26 +33,18 @@ async function createChat(prompt: string) {
   input.value = prompt
   loading.value = true
 
-  const parts: Array<{ type: string, text?: string, mediaType?: string, url?: string }> = [{ type: 'text', text: prompt }]
-
-  if (uploadedFiles.value.length > 0) {
-    parts.push(...uploadedFiles.value)
-  }
-
-  const chat = await $fetch('/api/chats', {
+  const chat = await $fetch('/api/v1/agent/chats', {
     method: 'POST',
     headers: { [headerName]: csrf },
     body: {
-      id: chatId,
-      message: {
-        role: 'user',
-        parts
-      }
+      app_name: "BuildMateWeb",
+      app_chat_id: chatId,
+      prompt: prompt,
     }
   })
 
   refreshNuxtData('chats')
-  navigateTo(`/chat/${chat?.id}`)
+  navigateTo(`/chat/${chat?.chat_id}`)
 }
 
 async function onSubmit() {
@@ -62,32 +54,16 @@ async function onSubmit() {
 
 const quickChats = [
   {
-    label: 'Why use Nuxt UI?',
-    icon: 'i-logos-nuxt-icon'
+    label: '查询构建状态',
+    icon: 'i-lucide-check-circle'
   },
   {
-    label: 'Help me create a Vue composable',
-    icon: 'i-logos-vue'
+    label: '修复构建编译错误',
+    icon: 'i-lucide-bug'
   },
   {
-    label: 'Tell me more about UnJS',
-    icon: 'i-logos-unjs'
-  },
-  {
-    label: 'Why should I consider VueUse?',
-    icon: 'i-logos-vueuse'
-  },
-  {
-    label: 'Tailwind CSS best practices',
-    icon: 'i-logos-tailwindcss-icon'
-  },
-  {
-    label: 'What is the weather in Bordeaux?',
-    icon: 'i-lucide-sun'
-  },
-  {
-    label: 'Show me a chart of sales data',
-    icon: 'i-lucide-line-chart'
+    label: '检视代码仓库代码',
+    icon: 'i-lucide-code'
   }
 ]
 </script>
@@ -126,9 +102,6 @@ const quickChats = [
 
             <template #footer>
               <div class="flex items-center gap-1">
-                <ChatFileUploadButton :open="open" />
-
-                <ModelSelect />
               </div>
 
               <UChatPromptSubmit color="neutral" size="sm" :disabled="uploading" />

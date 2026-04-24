@@ -40,14 +40,6 @@ const mockChats: Chat[] = [
     createdAt: lastWeek
   }),
   new Chat({
-    id: 'mock-5',
-    chat_id: 'mock-5',
-    title: '【Tool】带工具调用的对话（天气查询）',
-    userId: 'mock-user',
-    visibility: 'private',
-    createdAt: lastMonth
-  }),
-  new Chat({
     id: 'mock-6',
     chat_id: 'mock-6',
     title: '【综合】多步骤工具调用 + 思考链 + 来源文档 + 图表',

@@ -6,7 +6,6 @@ import { getTextFromMessage } from '@nuxt/ui/utils/ai'
 const props = defineProps<{
   message: UIMessage & { createdAt?: string | Date }
   streaming: boolean
-  vote: boolean | null
 }>()
 
 const formattedDate = computed(() => {
@@ -20,10 +19,6 @@ const formattedDate = computed(() => {
     iso: date.toISOString()
   }
 })
-
-const emit = defineEmits<{
-  vote: [message: UIMessage, isUpvoted: boolean]
-}>()
 
 const clipboard = useClipboard()
 
@@ -53,16 +48,6 @@ function copy() {
       />
     </UTooltip>
 
-    <UTooltip text="Good response">
-      <UButton
-        size="sm"
-        :color="vote === true ? 'success' : 'neutral'"
-        variant="ghost"
-        icon="i-lucide-thumbs-up"
-        aria-label="Good response"
-        @click="emit('vote', message, true)"
-      />
-    </UTooltip>
   </template>
 
   <template v-if="message.role === 'user' && !streaming">

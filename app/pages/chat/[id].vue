@@ -14,10 +14,6 @@ const { data } = await useFetch(`/api/v1/agent/chats/${route.params.id}`, {
 const isOwner = computed(() => data.value?.isOwner ?? false)
 const visibility = ref<'public' | 'private'>(data.value?.visibility ?? 'private')
 
-const { data: votes } = await useLazyFetch(`/api/v1/agent/chats/${route.params.id}/votes`, {
-  immediate: isOwner.value
-})
-
 const input = ref('')
 
 const chat = new Chat({
@@ -79,40 +75,6 @@ async function regenerateMessage(message: UIMessage) {
   chat.regenerate({ messageId: message.id })
 }
 
-function getVote(messageId: string) {
-  const vote = votes.value?.find(v => v.messageId === messageId)
-  if (!vote) return null
-  return !!vote.isUpvoted
-}
-
-async function vote(message: UIMessage, isUpvoted: boolean) {
-  const snapshot = (votes.value ?? []).map(v => ({ ...v }))
-  const toggling = getVote(message.id) === isUpvoted
-  const next = toggling ? null : isUpvoted
-
-  votes.value = next === null
-    ? (votes.value ?? []).filter(v => v.messageId !== message.id)
-    : [
-        ...(votes.value ?? []).filter(v => v.messageId !== message.id),
-        { chatId: data.value!.id, messageId: message.id, isUpvoted: next }
-      ]
-
-  try {
-    await $fetch(`/api/v1/agent/chats/${data.value!.id}/votes`, {
-      method: 'POST',
-      headers: { [headerName]: csrf },
-      body: next === null ? { messageId: message.id } : { messageId: message.id, isUpvoted: next }
-    })
-  } catch {
-    votes.value = snapshot
-    toast.add({
-      description: 'Failed to save vote',
-      icon: 'i-lucide-alert-circle',
-      color: 'error'
-    })
-  }
-}
-
 onMounted(() => {
   if (isOwner.value && data.value?.messages.length === 1) {
     chat.regenerate()
@@ -167,8 +129,6 @@ onMounted(() => {
             <ChatMessageActions
               :message="message"
               :streaming="chat.status === 'streaming' && message.id === chat.messages[chat.messages.length - 1]?.id"
-              :vote="getVote(message.id)"
-              @vote="(_message, isUpvoted) => vote(_message, isUpvoted)"
             />
           </template>
         </UChatMessages>

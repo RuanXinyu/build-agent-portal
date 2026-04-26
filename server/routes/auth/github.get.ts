@@ -21,18 +21,12 @@ export default defineOAuthGitHubEventHandler({
         provider: 'github',
         providerId: ghUser.id.toString()
       }).returning()
-    } else {
-      // Assign anonymous chats with session id to user
-      await db.update(schema.chats).set({
-        userId: user.id
-      }).where(eq(schema.chats.userId, session.id))
     }
 
     await setUserSession(event, { user })
 
     return sendRedirect(event, '/')
   },
-  // Optional, will return a json error and 401 status code by default
   onError(event, error) {
     console.error('GitHub OAuth error:', error)
     return sendRedirect(event, '/')

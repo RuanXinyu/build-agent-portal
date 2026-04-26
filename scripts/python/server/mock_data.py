@@ -628,7 +628,9 @@ def create_or_continue_chat(chat_id, prompt):
 
         # Generate random opencode logs for the assistant reply
         events = generate_opencode_logs(session_id, message_id, prompt)
-        events.append(make_chat_completed(session_id))
+        # chat.completed timestamp must be after the last event
+        last_event_ts = events[-1].get("timestamp", _now_ms()) if events else _now_ms()
+        events.append(make_chat_completed(session_id, timestamp=last_event_ts + 100))
         logs_store[chat_id] = events
 
         return chat, message_id
@@ -645,7 +647,9 @@ def create_or_continue_chat(chat_id, prompt):
 
     # Generate random opencode logs for the new assistant reply
     events = generate_opencode_logs(session_id, message_id, prompt, base_ts=base_ts)
-    events.append(make_chat_completed(session_id))
+    # chat.completed timestamp must be after the last event
+    last_event_ts = events[-1].get("timestamp", _now_ms()) if events else _now_ms()
+    events.append(make_chat_completed(session_id, timestamp=last_event_ts + 100))
     append_logs(chat_id, events)
 
     return chat, message_id

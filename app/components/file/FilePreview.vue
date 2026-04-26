@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
+import { VueMonacoEditor, VueMonacoDiffEditor } from '@guolao/vue-monaco-editor'
 
 interface FileContentResponse {
   name: string
@@ -265,18 +265,17 @@ defineExpose({ isMaximized })
 
     <!-- File loaded -->
     <template v-else-if="data">
-      <!-- Action bar (hidden when embedded) -->
-      <div
-        v-if="!embedded"
-        class="flex items-center gap-2 px-3 py-2 border-b border-default bg-elevated/30 text-sm shrink-0"
-      >
+      <!-- Action bar (always visible, compact when embedded) -->
+      <div class="flex items-center gap-2 px-3 py-2 border-b border-default bg-elevated/30 text-sm shrink-0">
         <div class="flex items-center gap-2 flex-1 min-w-0">
           <UIcon :name="getFileIcon(data.language)" class="size-4 shrink-0 text-muted" />
           <span class="truncate text-highlighted font-medium">{{ data.name }}</span>
-          <span v-if="data.language" class="text-xs text-muted bg-dimmed px-1.5 py-0.5 rounded">
-            {{ getLanguageDisplay(data.language) }}
-          </span>
-          <span class="text-xs text-muted">{{ lineCount }} 行</span>
+          <template v-if="!embedded">
+            <span v-if="data.language" class="text-xs text-muted bg-dimmed px-1.5 py-0.5 rounded">
+              {{ getLanguageDisplay(data.language) }}
+            </span>
+            <span class="text-xs text-muted">{{ lineCount }} 行</span>
+          </template>
         </div>
         <div class="flex items-center gap-1 shrink-0">
           <a
@@ -305,24 +304,35 @@ defineExpose({ isMaximized })
           </div>
         </div>
 
-        <!-- Code / plain text rendering -->
-        <div v-else class="flex-1 overflow-auto">
-          <table class="w-full text-sm font-mono">
-            <tbody>
-              <tr
-                v-for="(line, index) in (data.content || '').split('\n')"
-                :key="index"
-                class="hover:bg-elevated/30"
-              >
-                <td class="text-right text-muted/40 select-none px-3 py-0 border-r border-default align-top whitespace-nowrap">
-                  {{ index + 1 }}
-                </td>
-                <td class="px-3 py-0 text-highlighted whitespace-pre">
-                  {{ line }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Diff/Patch rendering -->
+        <div v-else-if="isDiff" class="flex-1 overflow-hidden">
+          <VueMonacoDiffEditor
+            :original="''"
+            :modified="data.content || ''"
+            :language="getMonacoLanguage(data.language)"
+            :options="{
+              readOnly: true,
+              renderSideBySide: true,
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              lineNumbers: 'on',
+              renderLineHighlight: 'none',
+              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+            }"
+            :theme="($colorMode?.value === 'dark' ? 'vs-dark' : 'vs')"
+            class="h-full"
+          />
+        </div>
+
+        <!-- Code / plain text rendering with Monaco Editor -->
+        <div v-else class="flex-1 overflow-hidden">
+          <VueMonacoEditor
+            :value="data.content || ''"
+            :language="getMonacoLanguage(data.language)"
+            :options="editorOptions"
+            :theme="($colorMode?.value === 'dark' ? 'vs-dark' : 'vs')"
+            class="h-full"
+          />
         </div>
       </template>
 

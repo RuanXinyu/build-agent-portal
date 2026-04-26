@@ -17,7 +17,7 @@ const emit = defineEmits<{
   selectFile: [path: string]
 }>()
 
-const { data, pending, error, refresh } = await useFetch<{ entries: FileEntry[] }>(
+const { data, pending, error, refresh } = useFetch<{ entries: FileEntry[] }>(
   '/api/v1/files',
   {
     query: computed(() => ({ path: props.currentPath })),

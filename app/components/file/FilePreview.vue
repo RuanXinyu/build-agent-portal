@@ -20,7 +20,7 @@ const emit = defineEmits<{
 const isMaximized = ref(false)
 
 // Fetch file content reactively
-const { data, pending, error, refresh } = await useFetch<FileContentResponse>(
+const { data, pending, error, refresh } = useFetch<FileContentResponse>(
   '/api/v1/files/content',
   {
     query: computed(() => (props.filePath ? { path: props.filePath } : undefined)),
@@ -29,7 +29,7 @@ const { data, pending, error, refresh } = await useFetch<FileContentResponse>(
   }
 )
 
-// Re-fetch when filePath changes to a non-null value
+// Fetch when filePath changes to a non-null value
 watch(() => props.filePath, (newPath) => {
   if (newPath) {
     refresh()

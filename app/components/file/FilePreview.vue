@@ -24,7 +24,7 @@ const isMaximized = ref(false)
 // --- Data fetching ---
 const data = ref<FileContentResponse | null>(null)
 const pending = ref(false)
-const error = ref<any>(null)
+const error = ref<Error | null>(null)
 
 async function fetchData() {
   if (!props.filePath) return
@@ -34,7 +34,7 @@ async function fetchData() {
     data.value = await $fetch<FileContentResponse>('/api/v1/files/content', {
       query: { path: props.filePath }
     })
-  } catch (e: any) {
+  } catch (e: unknown) {
     error.value = e
   } finally {
     pending.value = false
@@ -81,7 +81,8 @@ function getMonacoLanguage(language: string | null): string {
     dockerfile: 'dockerfile',
     diff: 'diff',
     graphql: 'graphql',
-    plain_text: 'plaintext',
+    graphql: 'graphql',
+    plain_text: 'plaintext'
   }
   return map[language.toLowerCase()] || 'plaintext'
 }
@@ -117,7 +118,8 @@ function getLanguageDisplay(language: string | null): string {
     dockerfile: 'Dockerfile',
     graphql: 'GraphQL',
     diff: 'Diff',
-    plain_text: 'Plain Text',
+    diff: 'Diff',
+    plain_text: 'Plain Text'
   }
   return map[language.toLowerCase()] || language
 }
@@ -151,7 +153,7 @@ function getFileIcon(language: string | null): string {
     xml: 'i-lucide-file-text',
     sql: 'i-lucide-database',
     dockerfile: 'i-lucide-container',
-    diff: 'i-lucide-git-compare',
+    diff: 'i-lucide-git-compare'
   }
   return iconMap[language.toLowerCase()] || 'i-lucide-file'
 }
@@ -202,13 +204,13 @@ const editorOptions = computed(() => ({
   contextmenu: false,
   scrollbar: {
     verticalScrollbarSize: 8,
-    horizontalScrollbarSize: 8,
+    horizontalScrollbarSize: 8
   },
   padding: { top: 8, bottom: 8 },
   overviewRulerBorder: false,
   hideCursorInOverviewRuler: true,
   overviewRulerLanes: 0,
-  renderWhitespace: 'none' as const,
+  renderWhitespace: 'none' as const
 }))
 
 // --- Actions ---
@@ -317,7 +319,7 @@ defineExpose({ isMaximized })
               scrollBeyondLastLine: false,
               lineNumbers: 'on',
               renderLineHighlight: 'none',
-              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 }
             }"
             :theme="($colorMode?.value === 'dark' ? 'vs-dark' : 'vs')"
             class="h-full"

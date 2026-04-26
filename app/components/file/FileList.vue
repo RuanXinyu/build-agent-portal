@@ -17,27 +17,37 @@ const emit = defineEmits<{
   selectFile: [path: string]
 }>()
 
-const { data, pending, error, refresh } = useFetch<{ entries: FileEntry[] }>(
-  '/api/v1/files',
-  {
-    query: computed(() => ({ path: props.currentPath })),
-    watch: [() => props.currentPath],
-    server: false,
-    immediate: true
-  }
-)
+const data = ref<{ entries: FileEntry[] } | null>(null)
+const pending = ref(false)
+const error = ref<Error | null>(null)
 
-defineExpose({ refresh })
+async function fetchData() {
+  pending.value = true
+  error.value = null
+  try {
+    data.value = await $fetch<{ entries: FileEntry[] }>('/api/v1/files', {
+      query: { path: props.currentPath }
+    })
+  } catch (e: unknown) {
+    error.value = e
+  } finally {
+    pending.value = false
+  }
+}
+
+watch(() => props.currentPath, () => fetchData(), { immediate: true })
+
+defineExpose({ refresh: fetchData })
 
 // Breadcrumb segments computed from currentPath
 const breadcrumbs = computed(() => {
-  if (!props.currentPath || props.currentPath === '/') {
+  if (!props.currentPath || props.currentPath === '~') {
     return []
   }
   const segments = props.currentPath.split('/').filter(Boolean)
   return segments.map((segment, index) => ({
-    label: segment,
-    path: '/' + segments.slice(0, index + 1).join('/')
+    label: segment === '~' ? '~' : segment,
+    path: segments.slice(0, index + 1).join('/')
   }))
 })
 
@@ -81,7 +91,7 @@ function getFileIcon(entry: FileEntry): string {
     xml: 'i-lucide-file-text',
     sql: 'i-lucide-database',
     dockerfile: 'i-lucide-container',
-    image: 'i-lucide-image',
+    image: 'i-lucide-image'
   }
   return iconMap[language] || 'i-lucide-file'
 }
@@ -106,11 +116,11 @@ function isFileSelected(entry: FileEntry): boolean {
     <div class="flex items-center gap-1 px-3 py-2 border-b border-default bg-elevated/30 text-sm overflow-x-auto shrink-0">
       <button
         class="flex items-center gap-1 text-muted hover:text-highlighted transition-colors px-1.5 py-0.5 rounded hover:bg-elevated/50"
-        @click="navigateTo('/')"
+        @click="navigateTo('~')"
       >
         <UIcon name="i-lucide-home" class="size-4" />
       </button>
-      <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
+      <template v-for="crumb in breadcrumbs" :key="crumb.path">
         <UIcon name="i-lucide-chevron-right" class="size-3 text-muted shrink-0" />
         <button
           class="text-muted hover:text-highlighted transition-colors px-1.5 py-0.5 rounded hover:bg-elevated/50 whitespace-nowrap"
@@ -136,7 +146,7 @@ function isFileSelected(entry: FileEntry): boolean {
         variant="ghost"
         icon="i-lucide-refresh-cw"
         label="重试"
-        @click="refresh()"
+        @click="fetchData()"
       />
     </div>
 

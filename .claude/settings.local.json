@@ -1,7 +1,22 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx nuxi typecheck)"
+      "Bash(npx nuxi typecheck)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(pip install:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(git diff:*)",
+      "Bash(echo:*)",
+      "Bash(bash:*)",
+      "mcp__web-reader__webReader",
+      "mcp__nuxt-ui-remote__get-component-metadata",
+      "mcp__nuxt-ui-remote__search-components",
+      "mcp__nuxt-ui-remote__get-component",
+      "Bash(npx nuxi typecheck:*)",
+      "Bash(git rm:*)",
+      "Bash(npx nuxi dev --port 3000)"
     ]
   }
 }

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'chat'
+})
+
 import { Chat } from '@ai-sdk/vue'
 import { parseJsonEventStream, uiMessageChunkSchema } from 'ai'
 import type { ChatTransport, UIMessage, UIMessageChunk, ChatRequestOptions } from 'ai'

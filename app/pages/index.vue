@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'landing'
+  layout: 'default'
 })
 
 navigateTo('/home', { redirectCode: 301, replace: true })

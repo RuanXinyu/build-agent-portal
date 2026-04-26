@@ -7,7 +7,8 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     'nuxt-auth-utils',
     'nuxt-charts',
-    'nuxt-csurf'
+    'nuxt-csurf',
+    'nuxt-skill-hub'
   ],
 
   devtools: {

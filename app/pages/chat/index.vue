@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'chat'
+})
+
 const input = ref('')
 const loading = ref(false)
 const { user } = useUserSession()

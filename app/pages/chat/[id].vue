@@ -26,6 +26,7 @@ const isOwner = computed(() => data.value?.isOwner ?? false)
 
 const input = ref('')
 const lastTimestamp = ref(data.value?.lastTimestamp ?? 0)
+const panelOpen = ref(false)
 
 const customTransport: ChatTransport<UIMessage> = {
   async sendMessages({
@@ -122,58 +123,77 @@ async function handleSubmit(e: Event) {
     class="relative min-h-0"
     :ui="{ body: 'p-0 sm:p-0 overscroll-none' }"
   >
+    <template #header>
+      <UDashboardNavbar class="absolute top-0 inset-x-0 z-10">
+        <template #right>
+          <UButton
+            :icon="panelOpen ? 'i-lucide-folder-open' : 'i-lucide-folder'"
+            :color="panelOpen ? 'primary' : 'neutral'"
+            :variant="panelOpen ? 'soft' : 'ghost'"
+            size="sm"
+            aria-label="浏览文件"
+            @click="panelOpen = !panelOpen"
+          />
+        </template>
+      </UDashboardNavbar>
+    </template>
+
     <template #body>
-      <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
-        <UChatMessages
-          should-auto-scroll
-          :messages="chat.messages"
-          :status="chat.status"
-          :spacing-offset="isOwner ? 160 : 0"
-          class="pt-(--ui-header-height) pb-4 sm:pb-6"
-        >
-          <template #indicator>
-            <div class="flex items-center gap-1.5">
-              <ChatIndicator />
+      <div class="flex h-full">
+        <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0">
+          <UChatMessages
+            should-auto-scroll
+            :messages="chat.messages"
+            :status="chat.status"
+            :spacing-offset="isOwner ? 160 : 0"
+            class="pt-(--ui-header-height) pb-4 sm:pb-6"
+          >
+            <template #indicator>
+              <div class="flex items-center gap-1.5">
+                <ChatIndicator />
 
-              <UChatShimmer text="Thinking..." class="text-sm" />
-            </div>
-          </template>
+                <UChatShimmer text="Thinking..." class="text-sm" />
+              </div>
+            </template>
 
-          <template #content="{ message }">
-            <ChatMessageContent
-              :message="message"
-            />
-          </template>
+            <template #content="{ message }">
+              <ChatMessageContent
+                :message="message"
+              />
+            </template>
 
-          <template v-if="isOwner" #actions="{ message }">
-            <ChatMessageActions
-              :message="message"
-              :streaming="chat.status === 'streaming' && message.id === chat.messages[chat.messages.length - 1]?.id"
-            />
-          </template>
-        </UChatMessages>
+            <template v-if="isOwner" #actions="{ message }">
+              <ChatMessageActions
+                :message="message"
+                :streaming="chat.status === 'streaming' && message.id === chat.messages[chat.messages.length - 1]?.id"
+              />
+            </template>
+          </UChatMessages>
 
-        <UChatPrompt
-          v-if="isOwner"
-          v-model="input"
-          :error="chat.error"
-          variant="subtle"
-          class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10"
-          :ui="{ base: 'px-1.5' }"
-          @submit="handleSubmit"
-        >
-          <template #footer>
-            <div class="flex items-center gap-1">
-            </div>
+          <UChatPrompt
+            v-if="isOwner"
+            v-model="input"
+            :error="chat.error"
+            variant="subtle"
+            class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10"
+            :ui="{ base: 'px-1.5' }"
+            @submit="handleSubmit"
+          >
+            <template #footer>
+              <div class="flex items-center gap-1">
+              </div>
 
-            <UChatPromptSubmit
-              :status="chat.status"
-              color="neutral"
-              size="sm"
-            />
-          </template>
-        </UChatPrompt>
-      </UContainer>
+              <UChatPromptSubmit
+                :status="chat.status"
+                color="neutral"
+                size="sm"
+              />
+            </template>
+          </UChatPrompt>
+        </UContainer>
+
+        <FileBrowserPanel v-model:open="panelOpen" />
+      </div>
     </template>
   </UDashboardPanel>
 

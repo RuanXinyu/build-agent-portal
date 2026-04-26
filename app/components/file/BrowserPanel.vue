@@ -140,6 +140,40 @@ function closePanel() {
         />
       </div>
     </div>
+
+    <!-- Maximize overlay -->
+    <Transition name="fade">
+      <div
+        v-if="open && isMaximized && selectedFilePath"
+        class="fixed inset-0 z-50 bg-default flex flex-col"
+      >
+        <div class="flex items-center gap-2 px-4 h-12 bg-elevated/80 border-b border-default shrink-0">
+          <UIcon name="i-lucide-file" class="text-primary" />
+          <span class="text-sm font-medium text-highlighted">{{ selectedFilePath.split('/').pop() }}</span>
+          <div class="ml-auto flex items-center gap-1">
+            <a
+              :href="`/api/v1/files/download?path=${encodeURIComponent(selectedFilePath)}`"
+              target="_blank"
+              class="inline-flex items-center justify-center size-8 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
+            >
+              <UIcon name="i-lucide-download" class="size-4" />
+            </a>
+            <button
+              class="inline-flex items-center justify-center size-8 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
+              @click="isMaximized = false"
+            >
+              <UIcon name="i-lucide-x" class="size-4" />
+            </button>
+          </div>
+        </div>
+        <div class="flex-1 overflow-auto">
+          <FileFilePreview
+            :file-path="selectedFilePath"
+            :embedded="true"
+          />
+        </div>
+      </div>
+    </Transition>
   </Transition>
 </template>
 
@@ -152,6 +186,16 @@ function closePanel() {
 .slide-enter-from,
 .slide-leave-to {
   transform: translateX(100%);
+  opacity: 0;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 </style>

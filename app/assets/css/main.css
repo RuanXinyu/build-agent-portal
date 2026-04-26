@@ -12,7 +12,7 @@
 }
 
 :root {
-  --ui-container: var(--container-3xl);
+  --ui-container: 96rem;
 }
 
 html.dark .shiki span {

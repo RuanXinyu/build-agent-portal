@@ -9,7 +9,7 @@ const items = computed<NavigationMenuItem[]>(() => [
 </script>
 
 <template>
-  <UHeader to="/home">
+  <UHeader to="/home" :ui="{ container: 'max-w-none flex items-center justify-between gap-3 h-full px-4 sm:px-6 lg:px-8' }">
     <template #title>
       <Logo class="h-6 w-auto" />
       <span class="text-lg font-bold text-highlighted">BuildAgent</span>

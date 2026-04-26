@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
+
 interface FileContentResponse {
   name: string
   language: string | null
@@ -19,25 +21,71 @@ const emit = defineEmits<{
 
 const isMaximized = ref(false)
 
-// Fetch file content reactively
-const { data, pending, error, refresh } = useFetch<FileContentResponse>(
-  '/api/v1/files/content',
-  {
-    query: computed(() => (props.filePath ? { path: props.filePath } : undefined)),
-    watch: [() => props.filePath],
-    immediate: false,
-    server: false
-  }
-)
+// --- Data fetching ---
+const data = ref<FileContentResponse | null>(null)
+const pending = ref(false)
+const error = ref<any>(null)
 
-// Fetch when filePath changes to a non-null value
+async function fetchData() {
+  if (!props.filePath) return
+  pending.value = true
+  error.value = null
+  try {
+    data.value = await $fetch<FileContentResponse>('/api/v1/files/content', {
+      query: { path: props.filePath }
+    })
+  } catch (e: any) {
+    error.value = e
+  } finally {
+    pending.value = false
+  }
+}
+
 watch(() => props.filePath, (newPath) => {
   if (newPath) {
-    refresh()
+    fetchData()
   }
 })
 
-// Language display name mapping
+// --- Language helpers ---
+
+// Map API language name to Monaco Editor language ID
+function getMonacoLanguage(language: string | null): string {
+  if (!language) return 'plaintext'
+  const map: Record<string, string> = {
+    typescript: 'typescript',
+    javascript: 'javascript',
+    python: 'python',
+    java: 'java',
+    c: 'c',
+    cpp: 'cpp',
+    go: 'go',
+    rust: 'rust',
+    ruby: 'ruby',
+    php: 'php',
+    swift: 'swift',
+    kotlin: 'kotlin',
+    vue: 'html',
+    html: 'html',
+    css: 'css',
+    scss: 'scss',
+    less: 'less',
+    shell: 'shell',
+    bash: 'shell',
+    markdown: 'markdown',
+    json: 'json',
+    yaml: 'yaml',
+    toml: 'toml',
+    xml: 'xml',
+    sql: 'sql',
+    dockerfile: 'dockerfile',
+    diff: 'diff',
+    graphql: 'graphql',
+    plain_text: 'plaintext',
+  }
+  return map[language.toLowerCase()] || 'plaintext'
+}
+
 function getLanguageDisplay(language: string | null): string {
   if (!language) return ''
   const map: Record<string, string> = {
@@ -68,12 +116,12 @@ function getLanguageDisplay(language: string | null): string {
     sql: 'SQL',
     dockerfile: 'Dockerfile',
     graphql: 'GraphQL',
+    diff: 'Diff',
     plain_text: 'Plain Text',
   }
   return map[language.toLowerCase()] || language
 }
 
-// File icon based on language
 function getFileIcon(language: string | null): string {
   if (!language) return 'i-lucide-file'
   const iconMap: Record<string, string> = {
@@ -103,41 +151,73 @@ function getFileIcon(language: string | null): string {
     xml: 'i-lucide-file-text',
     sql: 'i-lucide-database',
     dockerfile: 'i-lucide-container',
+    diff: 'i-lucide-git-compare',
   }
   return iconMap[language.toLowerCase()] || 'i-lucide-file'
 }
 
-// Compute line count from content
+// --- Computed properties ---
+
 const lineCount = computed(() => {
   if (!data.value?.content) return 0
   return data.value.content.split('\n').length
 })
 
-// File extension for non-previewable display
 const fileExtension = computed(() => {
   if (!data.value?.name) return ''
   const parts = data.value.name.split('.')
   return parts.length > 1 ? `.${parts[parts.length - 1]}` : ''
 })
 
-// Whether the file is markdown
 const isMarkdown = computed(() => {
   return data.value?.language?.toLowerCase() === 'markdown'
 })
 
-// Download URL
+const isDiff = computed(() => {
+  if (!data.value) return false
+  if (data.value.language?.toLowerCase() === 'diff') return true
+  const name = data.value.name.toLowerCase()
+  return name.endsWith('.patch') || name.endsWith('.diff')
+})
+
 const downloadUrl = computed(() => {
   if (!props.filePath) return ''
   return `/api/v1/files/download?path=${encodeURIComponent(props.filePath)}`
 })
 
-// Toggle maximize
+// --- Monaco Editor options ---
+
+const editorOptions = computed(() => ({
+  readOnly: true,
+  minimap: { enabled: false },
+  lineNumbers: 'on' as const,
+  scrollBeyondLastLine: false,
+  renderLineHighlight: 'none' as const,
+  folding: true,
+  wordWrap: 'on' as const,
+  fontSize: 13,
+  lineDecorationsWidth: 0,
+  lineNumbersMinChars: 3,
+  glyphMargin: false,
+  contextmenu: false,
+  scrollbar: {
+    verticalScrollbarSize: 8,
+    horizontalScrollbarSize: 8,
+  },
+  padding: { top: 8, bottom: 8 },
+  overviewRulerBorder: false,
+  hideCursorInOverviewRuler: true,
+  overviewRulerLanes: 0,
+  renderWhitespace: 'none' as const,
+}))
+
+// --- Actions ---
+
 function toggleMaximize() {
   isMaximized.value = !isMaximized.value
   emit('maximize')
 }
 
-// Escape key handler
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape' && isMaximized.value) {
     isMaximized.value = false
@@ -179,7 +259,7 @@ defineExpose({ isMaximized })
         variant="ghost"
         icon="i-lucide-refresh-cw"
         label="重试"
-        @click="refresh()"
+        @click="fetchData()"
       />
     </div>
 

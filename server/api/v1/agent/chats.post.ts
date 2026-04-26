@@ -2,21 +2,22 @@ import { z } from 'zod'
 
 export default defineEventHandler(async (event) => {
   const body = await readValidatedBody(event, z.object({
-    app_name: z.string().optional(),
-    app_chat_id: z.string().optional(),
+    chat_id: z.string().optional(),
     prompt: z.string()
   }).parse)
 
   const config = useRuntimeConfig()
-  const chat = await $fetch<{
-    id: string
+
+  const result = await $fetch<{
     chat_id: string
-    title: string | null
-    createdAt: string
+    message_id: string
   }>(`${config.flaskApiUrl}/api/chats`, {
     method: 'POST',
-    body: { message: body.prompt }
+    body: {
+      chat_id: body.chat_id || '',
+      prompt: body.prompt
+    }
   })
 
-  return chat
+  return result
 })

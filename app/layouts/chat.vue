@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { loggedIn, openInPopup } = useUserSession()
+const { loggedIn } = useUserSession()
 
 const open = ref(false)
 
@@ -63,64 +63,44 @@ defineShortcuts({
     </AppHeader>
 
     <UMain>
-    <UDashboardGroup unit="rem" class="flex-1 min-h-0">
-      <UDashboardSidebar
-        id="default"
-        v-model:open="open"
-        :min-size="12"
-        collapsible
-        resizable
-        class="border-r-0 py-4"
-      >
-        <template #header="{ collapsed }">
-          <NuxtLink to="/home" class="flex items-end gap-0.5">
-            <Logo class="h-8 w-auto shrink-0" />
-            <span v-if="!collapsed" class="text-xl font-bold text-highlighted">BuildMateChat</span>
-          </NuxtLink>
-        </template>
+      <UDashboardGroup unit="rem" class="flex-1 relative" style="height: calc(100vh - var(--ui-header-height))">
+        <UDashboardSidebar
+          id="default"
+          v-model:open="open"
+          :min-size="12"
+          collapsible
+          resizable
+          class="border-r-0 py-4"
+        >
+          <template #default="{ collapsed }">
+            <div class="flex flex-col gap-1.5">
+              <UButton
+                v-bind="collapsed ? { icon: 'i-lucide-plus' } : { label: '新会话' }"
+                variant="soft"
+                block
+                to="/chat"
+                @click="open = false"
+              />
 
-        <template #default="{ collapsed }">
-          <div class="flex flex-col gap-1.5">
-            <UButton
-              v-bind="collapsed ? { icon: 'i-lucide-plus' } : { label: '新会话' }"
-              variant="soft"
-              block
-              to="/chat"
-              @click="open = false"
+              <template v-if="collapsed">
+                <UDashboardSearchButton collapsed />
+              </template>
+            </div>
+
+            <UNavigationMenu
+              v-if="!collapsed"
+              :items="items"
+              :collapsed="collapsed"
+              orientation="vertical"
+              :ui="{ link: 'overflow-hidden' }"
             />
+          </template>
+        </UDashboardSidebar>
 
-            <template v-if="collapsed">
-              <UDashboardSearchButton collapsed />
-            </template>
-          </div>
-
-          <UNavigationMenu
-            v-if="!collapsed"
-            :items="items"
-            :collapsed="collapsed"
-            orientation="vertical"
-            :ui="{ link: 'overflow-hidden' }"
-          />
-        </template>
-
-        <template #footer="{ collapsed }">
-          <UserMenu v-if="loggedIn" :collapsed="collapsed" />
-          <UButton
-            v-else
-            :label="collapsed ? '' : '登录'"
-            icon="i-simple-icons-github"
-            color="neutral"
-            variant="ghost"
-            class="w-full"
-            @click="openInPopup('/auth/github')"
-          />
-        </template>
-      </UDashboardSidebar>
-
-      <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow min-w-0 overflow-hidden">
-        <slot />
-      </div>
-    </UDashboardGroup>
+        <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow min-w-0 overflow-hidden">
+          <slot />
+        </div>
+      </UDashboardGroup>
     </UMain>
   </div>
 </template>

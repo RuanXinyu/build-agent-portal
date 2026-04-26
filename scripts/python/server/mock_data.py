@@ -638,8 +638,13 @@ def create_or_continue_chat(chat_id, prompt):
     if not chat:
         return None, None
 
+    # Ensure new timestamps are after the last existing event
+    existing_logs = logs_store.get(chat_id, [])
+    last_ts = max((e.get("timestamp", 0) for e in existing_logs), default=0)
+    base_ts = max(_now_ms(), last_ts + 1)
+
     # Generate random opencode logs for the new assistant reply
-    events = generate_opencode_logs(session_id, message_id, prompt)
+    events = generate_opencode_logs(session_id, message_id, prompt, base_ts=base_ts)
     events.append(make_chat_completed(session_id))
     append_logs(chat_id, events)
 

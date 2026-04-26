@@ -34,6 +34,8 @@ EXTENSION_LANGUAGE_MAP = {
     ".graphql": "graphql",
     ".xml": "xml",
     ".dockerfile": "dockerfile",
+    ".diff": "diff",
+    ".patch": "diff",
 }
 
 # Extensions that can be previewed as text
@@ -146,6 +148,7 @@ MOCK_FILE_TREE = {
         ("tsconfig.json", "file", 378, '{\n  "compilerOptions": {\n    "target": "ES2022",\n    "module": "ESNext",\n    "moduleResolution": "bundler",\n    "strict": true,\n    "jsx": "preserve",\n    "resolveJsonModule": true,\n    "isolatedModules": true,\n    "esModuleInterop": true,\n    "lib": ["ES2022", "DOM"],\n    "skipLibCheck": true,\n    "paths": {\n      "@/*": ["./src/*"]\n    }\n  },\n  "include": ["src/**/*", "tests/**/*"],\n  "exclude": ["node_modules"]\n}\n'),
         (".gitignore", "file", 156, "node_modules/\ndist/\n.output/\n.env\n.env.local\n*.log\n.DS_Store\ncoverage/\n.cache/\n"),
         ("README.md", "file", 423, "# MyApp\n\nA modern web application built with Vue 3 and TypeScript.\n\n## Quick Start\n\n```bash\nnpm install\nnpm run dev\n```\n\n## Features\n\n- User authentication with JWT\n- Dashboard with real-time stats\n- Responsive design\n- TypeScript throughout\n\n## Project Structure\n\n```\nsrc/\n  components/   # Vue components\n  pages/        # Page components\n  utils/        # Utility functions\nserver/\n  api/          # API routes\n  db/           # Database schema\ntests/         # Test files\n```\n"),
+        ("hotfix.patch", "file", 589, 'diff --git a/src/utils/auth.ts b/src/utils/auth.ts\nindex a1b2c3d..e4f5g6h 100644\n--- a/src/utils/auth.ts\n+++ b/src/utils/auth.ts\n@@ -15,6 +15,10 @@ const TOKEN_EXPIRY = "7d"\n \n export interface TokenPayload {\n   userId: string\n   email: string\n-  role: "admin" | "user"\n+  role: "admin" | "user" | "moderator"\n+  permissions: string[]\n }\n+\n+export const DEFAULT_PERMISSIONS = ["read"] as const\n'),
     ]
 }
 

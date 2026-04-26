@@ -5,8 +5,6 @@ defineProps<{
   sticky?: boolean
 }>()
 
-const { loggedIn, openInPopup } = useUserSession()
-
 const navItems = computed<NavigationMenuItem[]>(() => [
   { label: '首页', to: '/home', icon: 'i-lucide-home' },
   { label: '命令行', to: '/cli', icon: 'i-lucide-terminal' },
@@ -33,15 +31,6 @@ const navItems = computed<NavigationMenuItem[]>(() => [
 
     <template #right>
       <slot name="right" />
-      <UserMenu v-if="loggedIn" />
-      <UButton
-        v-else
-        label="登录"
-        icon="i-simple-icons-github"
-        color="neutral"
-        variant="ghost"
-        @click="openInPopup('/auth/github')"
-      />
       <UColorModeButton />
     </template>
 

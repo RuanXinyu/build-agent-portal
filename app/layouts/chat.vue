@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { loggedIn, openInPopup } = useUserSession()
+const { loggedIn } = useUserSession()
 
 const open = ref(false)
 
@@ -93,19 +93,6 @@ defineShortcuts({
               :collapsed="collapsed"
               orientation="vertical"
               :ui="{ link: 'overflow-hidden' }"
-            />
-          </template>
-
-          <template #footer="{ collapsed }">
-            <UserMenu v-if="loggedIn" :collapsed="collapsed" />
-            <UButton
-              v-else
-              :label="collapsed ? '' : '登录'"
-              icon="i-simple-icons-github"
-              color="neutral"
-              variant="ghost"
-              class="w-full"
-              @click="openInPopup('/auth/github')"
             />
           </template>
         </UDashboardSidebar>

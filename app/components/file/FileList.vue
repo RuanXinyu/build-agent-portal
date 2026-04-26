@@ -21,7 +21,9 @@ const { data, pending, error, refresh } = useFetch<{ entries: FileEntry[] }>(
   '/api/v1/files',
   {
     query: computed(() => ({ path: props.currentPath })),
-    watch: [() => props.currentPath]
+    watch: [() => props.currentPath],
+    server: false,
+    immediate: true
   }
 )
 

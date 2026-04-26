@@ -25,7 +25,8 @@ const { data, pending, error, refresh } = useFetch<FileContentResponse>(
   {
     query: computed(() => (props.filePath ? { path: props.filePath } : undefined)),
     watch: [() => props.filePath],
-    immediate: false
+    immediate: false,
+    server: false
   }
 )
 

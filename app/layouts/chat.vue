@@ -15,10 +15,7 @@ const { data: chats, refresh: refreshChats } = await useFetch('/api/v1/agent/cha
 })
 
 onNuxtReady(async () => {
-  const first10 = (chats.value || []).slice(0, 10)
-  for (const chat of first10) {
-    await $fetch(`/api/v1/agent/chats/${chat.id}`)
-  }
+  // No pre-fetching — each chat detail page loads its own data on demand
 })
 
 watch(loggedIn, () => {

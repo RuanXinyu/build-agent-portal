@@ -9,6 +9,54 @@ interface FlaskMessage {
   createdAt: string
 }
 
+function writeMessageParts(writer: any, parts: any[]) {
+  for (const part of parts) {
+    if (part.type === 'text') {
+      writer.write({ type: 'text-delta', text: part.text })
+    } else if (part.type === 'reasoning') {
+      writer.write({ type: 'reasoning', text: part.text })
+    } else if (part.type === 'source-url') {
+      writer.write({
+        type: 'source-url',
+        sourceId: part.sourceId,
+        url: part.url,
+        title: part.title
+      })
+    } else if (part.type === 'source-document') {
+      writer.write({
+        type: 'source-document',
+        sourceId: part.sourceId,
+        mediaType: part.mediaType,
+        title: part.title,
+        filename: part.filename
+      })
+    } else if (part.type === 'file') {
+      writer.write({
+        type: 'file',
+        mediaType: part.mediaType,
+        url: part.url
+      })
+    } else if (part.type === 'step-start') {
+      writer.write({ type: 'step-start' })
+    } else if (part.type.startsWith('tool-')) {
+      const toolName = part.type.slice(5) // remove 'tool-' prefix
+      writer.write({
+        type: 'tool-call',
+        toolCallId: part.toolCallId,
+        toolName,
+        args: part.input
+      })
+      if (part.output !== undefined) {
+        writer.write({
+          type: 'tool-result',
+          toolCallId: part.toolCallId,
+          result: part.output
+        })
+      }
+    }
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
@@ -51,12 +99,7 @@ export default defineEventHandler(async (event) => {
                 const msg = JSON.parse(data) as FlaskMessage
 
                 if (msg.role === 'assistant') {
-                  writer.write({
-                    type: 'message',
-                    role: 'assistant',
-                    id: msg.id,
-                    parts: msg.parts
-                  })
+                  writeMessageParts(writer, msg.parts)
                 }
               } catch {
                 // 忽略解析错误

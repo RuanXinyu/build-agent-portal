@@ -1,20 +1,7 @@
 <script setup lang="ts">
-import { LazyModalConfirm } from '#components'
-
-const route = useRoute()
-const toast = useToast()
-const overlay = useOverlay()
 const { loggedIn, openInPopup } = useUserSession()
-const { csrf, headerName } = useCsrf()
 
 const open = ref(false)
-
-const deleteModal = overlay.create(LazyModalConfirm, {
-  props: {
-    title: '删除会话',
-    description: '确定要删除这个会话吗？删除后无法恢复。'
-  }
-})
 
 const { data: chats, refresh: refreshChats } = await useFetch('/api/v1/agent/chats', {
   key: 'chats',
@@ -31,7 +18,7 @@ onNuxtReady(async () => {
   const first10 = (chats.value || []).slice(0, 10)
   for (const chat of first10) {
     // prefetch the chat and let the browser cache it
-    await $fetch(`/api/v1/agent/chats/${chat.chat_id}`)
+    await $fetch(`/api/v1/agent/chats/${chat.id}`)
   }
 })
 
@@ -51,34 +38,9 @@ const items = computed(() => groups.value?.flatMap((group) => {
     ...item,
     slot: 'chat' as const,
     icon: undefined,
-    class: item.label === 'Untitled' ? 'text-muted' : ''
+    class: item.label === '未命名会话' ? 'text-muted' : ''
   }))]
 }))
-
-async function deleteChat(id: string) {
-  const instance = deleteModal.open()
-  const result = await instance.result
-  if (!result) {
-    return
-  }
-
-  await $fetch(`/api/v1/agent/chats/${id}`, {
-    method: 'DELETE',
-    headers: { [headerName]: csrf }
-  })
-
-  toast.add({
-    title: '会话删除',
-    description: '会话已删除',
-    icon: 'i-lucide-trash'
-  })
-
-  refreshChats()
-
-  if (route.params.id === id) {
-    navigateTo('/')
-  }
-}
 
 defineShortcuts({
   c: () => {
@@ -125,22 +87,7 @@ defineShortcuts({
           :collapsed="collapsed"
           orientation="vertical"
           :ui="{ link: 'overflow-hidden' }"
-        >
-          <template #chat-trailing="{ item }">
-            <div class="flex -mr-1.25 translate-x-full group-hover:translate-x-0 transition-transform">
-              <UButton
-                icon="i-lucide-x"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
-                aria-label="删除会话"
-                tabindex="-1"
-                @click.stop.prevent="deleteChat((item as any).chat_id)"
-              />
-            </div>
-          </template>
-        </UNavigationMenu>
+        />
       </template>
 
       <template #footer="{ collapsed }">

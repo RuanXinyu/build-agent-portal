@@ -26,6 +26,10 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2024-07-11',
 
+  runtimeConfig: {
+    flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001'
+  },
+
   nitro: {
     experimental: {
       openAPI: true

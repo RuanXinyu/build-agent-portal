@@ -57,15 +57,15 @@ defineShortcuts({
 
 <template>
   <div class="flex flex-col h-screen">
-    <UHeader to="/home">
+    <UHeader to="/home" :ui="{ root: 'bg-default/75 backdrop-blur border-b border-default h-(--ui-header-height) z-50' }">
       <template #title>
         <Logo class="h-6 w-auto" />
+        <span class="text-lg font-bold text-highlighted">BuildAgent</span>
       </template>
 
       <UNavigationMenu :items="navItems" />
 
       <template #right>
-        <UDashboardSidebarCollapse />
         <UColorModeButton />
         <UButton
           color="neutral"

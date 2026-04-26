@@ -12,6 +12,7 @@ const items = computed<NavigationMenuItem[]>(() => [
   <UHeader to="/home">
     <template #title>
       <Logo class="h-6 w-auto" />
+      <span class="text-lg font-bold text-highlighted">BuildAgent</span>
     </template>
 
     <UNavigationMenu :items="items" />

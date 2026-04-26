@@ -5,12 +5,6 @@ import { isPartStreaming, isToolStreaming } from '@nuxt/ui/utils/ai'
 
 defineProps<{
   message: UIMessage
-  editing: boolean
-}>()
-
-const emit = defineEmits<{
-  save: [message: UIMessage, text: string]
-  cancelEdit: []
 }>()
 </script>
 
@@ -42,6 +36,10 @@ const emit = defineEmits<{
       >
         <ChatToolSources :sources="getSources(part)" />
       </UChatTool>
+      <ChatToolInvocation
+        v-else
+        :part="(part as any)"
+      />
     </template>
 
     <template v-else-if="isTextUIPart(part)">

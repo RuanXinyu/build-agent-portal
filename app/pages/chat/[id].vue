@@ -1,36 +1,85 @@
 <script setup lang="ts">
 import { Chat } from '@ai-sdk/vue'
-import { DefaultChatTransport } from 'ai'
-import type { UIMessage } from 'ai'
+import { parseJsonEventStream, uiMessageChunkSchema } from 'ai'
+import type { ChatTransport, UIMessage, UIMessageChunk, ChatRequestOptions } from 'ai'
 
 const route = useRoute()
 const toast = useToast()
 const { csrf, headerName } = useCsrf()
 
-const { data } = await useFetch(`/api/v1/agent/chats/${route.params.id}`, {
+interface ChatData {
+  id: string
+  title: string | null
+  createdAt: string
+  messages: UIMessage[]
+  lastTimestamp: number
+  isOwner: boolean
+}
+
+const { data } = await useFetch<ChatData>(`/api/v1/agent/chats/${route.params.id}`, {
   cache: 'force-cache'
 })
 
 const isOwner = computed(() => data.value?.isOwner ?? false)
-const visibility = ref<'public' | 'private'>(data.value?.visibility ?? 'private')
 
 const input = ref('')
+const lastTimestamp = ref(data.value?.lastTimestamp ?? 0)
+
+const customTransport: ChatTransport<UIMessage> = {
+  async sendMessages({
+    chatId,
+    messages,
+    abortSignal,
+  }: {
+    trigger: 'submit-message' | 'regenerate-message'
+    chatId: string
+    messageId: string | undefined
+    messages: UIMessage[]
+    abortSignal: AbortSignal | undefined
+  } & ChatRequestOptions): Promise<ReadableStream<UIMessageChunk>> {
+    // Extract text from the last message
+    const lastMessage = messages[messages.length - 1]
+    const text = lastMessage?.parts
+      ?.filter((p: any) => p.type === 'text')
+      ?.map((p: any) => p.text)
+      ?.join('') || ''
+
+    // 1. POST to trigger chat
+    const result = await $fetch<{ chat_id: string; message_id: string }>('/api/v1/agent/chats', {
+      method: 'POST',
+      headers: { [headerName]: csrf },
+      body: { chat_id: chatId, prompt: text }
+    })
+
+    // 2. Fetch SSE stream with lastTimestamp for incremental queries
+    const url = `/api/v1/agent/chats/${result.chat_id}?stream=true&after_ts=${lastTimestamp.value}`
+    const response = await fetch(url, { signal: abortSignal })
+
+    if (!response.body) throw new Error('No response body')
+
+    // 3. Parse SSE response and return as ReadableStream<UIMessageChunk>
+    return parseJsonEventStream({
+      stream: response.body,
+      schema: uiMessageChunkSchema,
+    }).pipeThrough(
+      new TransformStream({
+        transform(chunk, controller) {
+          if (!chunk.success) throw chunk.error
+          controller.enqueue(chunk.value)
+        }
+      })
+    )
+  },
+
+  async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
+    return null
+  }
+}
 
 const chat = new Chat({
   id: data.value?.id,
   messages: data.value?.messages,
-  transport: new DefaultChatTransport({
-    api: `/api/v1/agent/chats/${data.value?.id}`,
-    headers: { [headerName]: csrf },
-    body: {
-      
-    }
-  }),
-  onData: (dataPart) => {
-    if (dataPart.type === 'data-chat-title') {
-      refreshNuxtData('chats')
-    }
-  },
+  transport: customTransport,
   onError(error) {
     const { message } = typeof error.message === 'string' && error.message[0] === '{' ? JSON.parse(error.message) : error
     toast.add({
@@ -42,6 +91,16 @@ const chat = new Chat({
   }
 })
 
+// Update lastTimestamp when streaming completes
+watch(
+  () => chat.status,
+  (status) => {
+    if (status === 'ready') {
+      lastTimestamp.value = Date.now()
+    }
+  }
+)
+
 async function handleSubmit(e: Event) {
   e.preventDefault()
   if (input.value.trim()) {
@@ -52,34 +111,6 @@ async function handleSubmit(e: Event) {
   }
 }
 
-const editingMessageId = ref<string | null>(null)
-
-function startEdit(message: UIMessage) {
-  if (editingMessageId.value) return
-
-  editingMessageId.value = message.id
-}
-
-async function regenerateMessage(message: UIMessage) {
-  try {
-    await $fetch(`/api/v1/agent/chats/${data.value!.id}/messages`, {
-      method: 'DELETE',
-      headers: { [headerName]: csrf },
-      body: { messageId: message.id, type: 'regenerate' }
-    })
-  } catch {
-    toast.add({ description: 'Failed to regenerate.', icon: 'i-lucide-alert-circle', color: 'error' })
-    return
-  }
-
-  chat.regenerate({ messageId: message.id })
-}
-
-onMounted(() => {
-  if (isOwner.value && data.value?.messages.length === 1) {
-    chat.regenerate()
-  }
-})
 </script>
 
 <template>
@@ -90,14 +121,7 @@ onMounted(() => {
     :ui="{ body: 'p-0 sm:p-0 overscroll-none' }"
   >
     <template #header>
-      <Navbar>
-        <ChatVisibility
-          v-if="isOwner"
-          :chat-id="data!.id"
-          :visibility="visibility"
-          @update:visibility="visibility = $event"
-        />
-      </Navbar>
+      <Navbar />
     </template>
 
     <template #body>
@@ -120,8 +144,6 @@ onMounted(() => {
           <template #content="{ message }">
             <ChatMessageContent
               :message="message"
-              :editing="false"
-              @cancel-edit="editingMessageId = null"
             />
           </template>
 

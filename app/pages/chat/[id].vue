@@ -16,9 +16,7 @@ interface ChatData {
   isOwner: boolean
 }
 
-const { data } = await useFetch<ChatData>(`/api/v1/agent/chats/${route.params.id}`, {
-  cache: 'force-cache'
-})
+const { data } = await useFetch<ChatData>(`/api/v1/agent/chats/${route.params.id}`)
 
 const isOwner = computed(() => data.value?.isOwner ?? false)
 

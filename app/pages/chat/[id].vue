@@ -118,10 +118,6 @@ async function handleSubmit(e: Event) {
     class="relative min-h-0"
     :ui="{ body: 'p-0 sm:p-0 overscroll-none' }"
   >
-    <template #header>
-      <Navbar />
-    </template>
-
     <template #body>
       <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
         <UChatMessages

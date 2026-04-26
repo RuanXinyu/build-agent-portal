@@ -9,6 +9,7 @@ const items = computed<NavigationMenuItem[]>(() => [
 </script>
 
 <template>
+  <div class="landing-layout">
   <UHeader to="/home" :ui="{ container: 'max-w-none flex items-center justify-between gap-3 h-full px-4 sm:px-6 lg:px-8' }">
     <template #title>
       <Logo class="h-6 w-auto" />
@@ -35,4 +36,11 @@ const items = computed<NavigationMenuItem[]>(() => [
       <p class="text-muted text-sm">Copyright &copy; {{ new Date().getFullYear() }} BuildMate</p>
     </template>
   </UFooter>
+  </div>
 </template>
+
+<style scoped>
+.landing-layout {
+  --ui-container: 96rem;
+}
+</style>

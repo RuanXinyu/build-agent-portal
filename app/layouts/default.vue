@@ -57,7 +57,7 @@ defineShortcuts({
 
 <template>
   <div class="flex flex-col h-screen">
-    <UHeader to="/home" :ui="{ root: 'bg-default/75 backdrop-blur border-b border-default h-(--ui-header-height) z-50', container: 'max-w-none flex items-center justify-between gap-3 h-full px-4 sm:px-6 lg:px-8' }">
+    <UHeader to="/home" :ui="{ root: 'bg-default/75 backdrop-blur border-b border-default h-(--ui-header-height) relative z-50', container: 'max-w-none flex items-center justify-between gap-3 h-full px-4 sm:px-6 lg:px-8' }">
       <template #title>
         <Logo class="h-6 w-auto" />
         <span class="text-lg font-bold text-highlighted">BuildAgent</span>

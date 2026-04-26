@@ -1,8 +1,6 @@
 <script setup lang="ts">
 const input = ref('')
 const loading = ref(false)
-const chatId = crypto.randomUUID()
-
 const { user } = useUserSession()
 
 const greeting = computed(() => {
@@ -26,18 +24,16 @@ async function createChat(prompt: string) {
   input.value = prompt
   loading.value = true
 
-  const chat = await $fetch('/api/v1/agent/chats', {
+  const result = await $fetch<{ chat_id: string; message_id: string }>('/api/v1/agent/chats', {
     method: 'POST',
     headers: { [headerName]: csrf },
     body: {
-      app_name: "BuildMateWeb",
-      app_chat_id: chatId,
       prompt: prompt,
     }
   })
 
   refreshNuxtData('chats')
-  navigateTo(`/chat/${chat?.chat_id}`)
+  navigateTo(`/chat/${result.chat_id}`)
 }
 
 async function onSubmit() {

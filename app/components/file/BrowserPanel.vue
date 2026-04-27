@@ -88,10 +88,6 @@ function onMaximize() {
     emit('maximize', selectedFilePath.value)
   }
 }
-
-function closePanel() {
-  emit('update:open', false)
-}
 </script>
 
 <template>

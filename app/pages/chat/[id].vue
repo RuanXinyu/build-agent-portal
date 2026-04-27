@@ -1,11 +1,11 @@
 <script setup lang="ts">
-definePageMeta({
-  layout: 'chat'
-})
-
 import { Chat } from '@ai-sdk/vue'
 import { parseJsonEventStream, uiMessageChunkSchema } from 'ai'
 import type { ChatTransport, UIMessage, UIMessageChunk, ChatRequestOptions } from 'ai'
+
+definePageMeta({
+  layout: 'chat'
+})
 
 const route = useRoute()
 const toast = useToast()
@@ -68,7 +68,7 @@ const customTransport: ChatTransport<UIMessage> = {
   async sendMessages({
     chatId,
     messages,
-    abortSignal,
+    abortSignal
   }: {
     trigger: 'submit-message' | 'regenerate-message'
     chatId: string
@@ -84,7 +84,7 @@ const customTransport: ChatTransport<UIMessage> = {
       ?.join('') || ''
 
     // 1. POST to trigger chat
-    const result = await $fetch<{ chat_id: string; message_id: string }>('/api/v1/agent/chats', {
+    const result = await $fetch<{ chat_id: string, message_id: string }>('/api/v1/agent/chats', {
       method: 'POST',
       headers: { [headerName]: csrf },
       body: { chat_id: chatId, prompt: text }
@@ -99,7 +99,7 @@ const customTransport: ChatTransport<UIMessage> = {
     // 3. Parse SSE response and return as ReadableStream<UIMessageChunk>
     return parseJsonEventStream({
       stream: response.body,
-      schema: uiMessageChunkSchema,
+      schema: uiMessageChunkSchema
     }).pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
@@ -149,7 +149,6 @@ async function handleSubmit(e: Event) {
     input.value = ''
   }
 }
-
 </script>
 
 <template>
@@ -161,19 +160,18 @@ async function handleSubmit(e: Event) {
   >
     <template #body>
       <div class="flex h-full">
-          <!-- Floating folder toggle button -->
-          <UButton
-            :icon="panelOpen ? 'i-lucide-folder-open' : 'i-lucide-folder'"
-            :color="panelOpen ? 'primary' : 'neutral'"
-            :variant="panelOpen ? 'soft' : 'ghost'"
-            size="sm"
-            aria-label="浏览文件"
-            :aria-pressed="panelOpen"
-            class="absolute top-3 right-3 z-10"
-            @click="panelOpen = !panelOpen"
-          />
+        <!-- Floating folder toggle button -->
+        <UButton
+          :icon="panelOpen ? 'i-lucide-folder-open' : 'i-lucide-folder'"
+          :color="panelOpen ? 'primary' : 'neutral'"
+          :variant="panelOpen ? 'soft' : 'ghost'"
+          size="sm"
+          aria-label="浏览文件"
+          :aria-pressed="panelOpen"
+          class="absolute top-3 right-3 z-10"
+          @click="panelOpen = !panelOpen"
+        />
         <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0 min-h-0 overflow-y-auto relative">
-
           <UChatMessages
             should-auto-scroll
             :messages="chat.messages"
@@ -213,8 +211,7 @@ async function handleSubmit(e: Event) {
             @submit="handleSubmit"
           >
             <template #footer>
-              <div class="flex items-center gap-1">
-              </div>
+              <div class="flex items-center gap-1" />
 
               <UChatPromptSubmit
                 :status="chat.status"

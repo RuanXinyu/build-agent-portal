@@ -1,6 +1,4 @@
 import { and, eq } from 'drizzle-orm'
-import { getSSOAuthUrl, exchangeCodeForToken, fetchSSOUserInfo } from '~/server/utils/sso'
-import { exchangeSSOCookieForToken } from '~/server/utils/tokenExchange'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -55,7 +53,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!user) {
-      ;[user] = await db.insert(schema.users).values({
+      const [inserted] = await db.insert(schema.users).values({
         id: session.id,
         name: ssoUser.name || '',
         email: ssoUser.email || '',
@@ -64,6 +62,12 @@ export default defineEventHandler(async (event) => {
         provider: 'sso',
         providerId
       }).returning()
+      user = inserted
+    }
+
+    if (!user) {
+      console.error('Failed to create or find user')
+      return sendRedirect(event, '/')
     }
 
     // Step 5: Set session with user + x-auth-token

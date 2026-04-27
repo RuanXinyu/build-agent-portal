@@ -1,5 +1,3 @@
-import { exchangeSSOCookieForToken } from '~/server/utils/tokenExchange'
-
 interface SessionData {
   xAuthToken?: string
   [key: string]: unknown

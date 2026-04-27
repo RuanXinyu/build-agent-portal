@@ -1,11 +1,10 @@
 import { ofetch } from 'ofetch'
 import type { H3Event } from 'h3'
-import { exchangeSSOCookieForToken } from '~/server/utils/tokenExchange'
 
 interface InternalServiceOptions {
   method?: string
   params?: Record<string, string>
-  body?: unknown
+  body?: Record<string, any> | null
   headers?: Record<string, string>
 }
 

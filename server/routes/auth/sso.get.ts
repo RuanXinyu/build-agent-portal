@@ -39,7 +39,6 @@ export default defineEventHandler(async (event) => {
     }
 
     // Step 4: Upsert user in local database
-    const config = useRuntimeConfig()
     const session = await getUserSession(event)
     const providerId = String(ssoUser.id)
 
@@ -85,8 +84,7 @@ export default defineEventHandler(async (event) => {
     })
 
     return sendRedirect(event, '/')
-  }
-  catch (err) {
+  } catch (err) {
     console.error('SSO OAuth callback error:', err)
     return sendRedirect(event, '/')
   }

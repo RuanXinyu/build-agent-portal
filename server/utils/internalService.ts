@@ -4,7 +4,7 @@ import type { H3Event } from 'h3'
 interface InternalServiceOptions {
   method?: string
   params?: Record<string, string>
-  body?: Record<string, any> | null
+  body?: Record<string, unknown> | null
   headers?: Record<string, string>
 }
 
@@ -44,8 +44,7 @@ export async function useInternalService<T>(
         ...options.headers
       }
     })
-  }
-  catch (error: unknown) {
+  } catch (error: unknown) {
     const fetchError = error as { statusCode?: number }
     if (fetchError.statusCode !== 401) {
       throw error

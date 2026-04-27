@@ -19,8 +19,7 @@ export default defineEventHandler(async (event) => {
     const newToken = await exchangeSSOCookieForToken(event)
     if (newToken) {
       await setUserSession(event, { xAuthToken: newToken } as Record<string, unknown>)
-    }
-    else {
+    } else {
       throw createError({
         statusCode: 401,
         statusMessage: 'Authentication required'

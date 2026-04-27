@@ -26,8 +26,7 @@ export async function exchangeSSOCookieForToken(event: H3Event): Promise<string 
       }
     })
     return res.token
-  }
-  catch (error: unknown) {
+  } catch (error: unknown) {
     const status = (error as { statusCode?: number })?.statusCode
     if (status === 401) {
       console.warn('SSO Cookie expired during token exchange')

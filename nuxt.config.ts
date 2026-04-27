@@ -28,7 +28,15 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-07-11',
 
   runtimeConfig: {
-    flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001'
+    flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001',
+    ssoClientId: process.env.NUXT_SSO_CLIENT_ID || '',
+    ssoClientSecret: process.env.NUXT_SSO_CLIENT_SECRET || '',
+    ssoAuthorizeUrl: process.env.NUXT_SSO_AUTHORIZE_URL || '',
+    ssoTokenUrl: process.env.NUXT_SSO_TOKEN_URL || '',
+    ssoUserinfoUrl: process.env.NUXT_SSO_USERINFO_URL || '',
+    ssoRedirectUrl: process.env.NUXT_SSO_REDIRECT_URL || '',
+    tokenExchangeUrl: process.env.NUXT_TOKEN_EXCHANGE_URL || '',
+    ssoCookieName: process.env.NUXT_SSO_COOKIE_NAME || 'sso_token'
   },
 
   nitro: {

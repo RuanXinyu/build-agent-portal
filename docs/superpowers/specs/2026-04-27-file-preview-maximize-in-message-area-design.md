@@ -110,6 +110,8 @@ chat/[id].vue
         ├── v-model:open="panelOpen"
         ├── :maximized-file="maximizedFile"
         ├── @maximize="maximizedFile = $event"
+        ├── @select-file="onFileSelected($event)"
+        │     (onFileSelected: if maximizedFile is not null, set maximizedFile = path)
         │
         └── FilePreview (embedded, hidden when file is maximized)
               └── @maximize → emit('maximize', selectedFilePath)
@@ -119,7 +121,7 @@ chat/[id].vue
 
 1. User maximizes file A → `maximizedFile = 'A'` → overlay shows file A, panel preview hidden
 2. User clicks file B in FileList → `selectedFilePath = 'B'` in panel
-3. Page watches `selectedFilePath` change (via emit) or BrowserPanel emits `maximize('B')` → `maximizedFile = 'B'` → overlay updates to file B
+3. BrowserPanel emits `selectFile('B')` → page handler detects `maximizedFile !== null`, automatically sets `maximizedFile = 'B'` → overlay updates to file B
 4. User clicks minimize → `maximizedFile = null` → overlay disappears, panel preview shows file B
 
 The key insight: when the panel emits `selectFile` and `maximizedFile` is not null, the page should automatically update `maximizedFile` to the new file path, keeping the maximize state.

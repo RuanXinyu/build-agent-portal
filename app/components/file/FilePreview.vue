@@ -19,8 +19,6 @@ const emit = defineEmits<{
   maximize: []
 }>()
 
-const isMaximized = ref(false)
-
 // --- Data fetching ---
 const data = ref<FileContentResponse | null>(null)
 const pending = ref(false)
@@ -45,7 +43,7 @@ watch(() => props.filePath, (newPath) => {
   if (newPath) {
     fetchData()
   }
-})
+}, { immediate: true })
 
 // --- Language helpers ---
 
@@ -216,26 +214,8 @@ const editorOptions = computed(() => ({
 // --- Actions ---
 
 function toggleMaximize() {
-  isMaximized.value = !isMaximized.value
   emit('maximize')
 }
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && isMaximized.value) {
-    isMaximized.value = false
-    emit('maximize')
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('keydown', onKeydown)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', onKeydown)
-})
-
-defineExpose({ isMaximized })
 </script>
 
 <template>
@@ -292,7 +272,7 @@ defineExpose({ isMaximized })
             class="inline-flex items-center justify-center size-7 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
             @click="toggleMaximize"
           >
-            <UIcon :name="isMaximized ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'" class="size-4" />
+            <UIcon name="i-lucide-maximize-2" class="size-4" />
           </button>
         </div>
       </div>
@@ -302,7 +282,7 @@ defineExpose({ isMaximized })
         <!-- Markdown rendering -->
         <div v-if="isMarkdown" class="flex-1 overflow-y-auto">
           <div class="prose prose-sm dark:prose-invert max-w-none p-4">
-            <ChatComark :content="data.content || ''" />
+            <ChatComark :markdown="data.content || ''" />
           </div>
         </div>
 

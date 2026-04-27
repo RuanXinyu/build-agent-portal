@@ -1,5 +1,4 @@
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
   const query = getQuery(event)
   const path = query.path as string
 
@@ -7,7 +6,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'path parameter is required' })
   }
 
-  const res = await $fetch<ArrayBuffer>(`${config.flaskApiUrl}/api/files/download`, {
+  const res = await useInternalService<ArrayBuffer>(event, '/api/files/download', {
     params: { path }
   })
 

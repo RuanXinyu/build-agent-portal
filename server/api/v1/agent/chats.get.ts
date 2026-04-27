@@ -1,8 +1,9 @@
-export default defineEventHandler(async () => {
-  const config = useRuntimeConfig()
-  const res = await $fetch<{ id: string, chat_id: string, title: string | null, createdAt: string }[]>(
-    `${config.flaskApiUrl}/api/chats`
+export default defineEventHandler(async (event) => {
+  const res = await useInternalService<{ id: string, chat_id: string, title: string | null, createdAt: string }[]>(
+    event,
+    '/api/chats'
   )
+
   return res.map(chat => ({
     ...chat,
     userId: 'mock-user',

@@ -6,12 +6,10 @@ export default defineEventHandler(async (event) => {
     prompt: z.string()
   }).parse)
 
-  const config = useRuntimeConfig()
-
-  const result = await $fetch<{
+  const result = await useInternalService<{
     chat_id: string
     message_id: string
-  }>(`${config.flaskApiUrl}/api/chats`, {
+  }>(event, '/api/chats', {
     method: 'POST',
     body: {
       chat_id: body.chat_id || '',

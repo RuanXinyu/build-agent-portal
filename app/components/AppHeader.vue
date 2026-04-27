@@ -9,7 +9,7 @@ const { loggedIn, openInPopup } = useUserSession()
 
 const navItems = computed<NavigationMenuItem[]>(() => [
   { label: '首页', to: '/home', icon: 'i-lucide-home' },
-  { label: '命令行', to: '/cli', icon: 'i-lucide-terminal' },
+  { label: '工具', to: '/cli', icon: 'ic:round-terminal' },
   { label: '会话', to: '/chat', icon: 'i-lucide-messages-square' }
 ])
 </script>

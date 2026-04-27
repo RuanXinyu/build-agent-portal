@@ -156,7 +156,7 @@ async function handleSubmit(e: Event) {
     v-if="data?.id"
     id="chat"
     class="relative min-h-0"
-    :ui="{ body: 'flex flex-col flex-1 overflow-y-auto p-0 sm:p-0 overscroll-none' }"
+    :ui="{ body: 'flex flex-col flex-1 p-0 sm:p-0 overscroll-none' }"
   >
     <template #body>
       <div class="flex h-full">
@@ -171,9 +171,23 @@ async function handleSubmit(e: Event) {
           class="absolute top-3 right-3 z-10"
           @click="panelOpen = !panelOpen"
         />
-        <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0 min-h-0 overflow-y-auto relative">
+        <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0 min-h-0 relative max-w-7xl">
           <UChatMessages
             should-auto-scroll
+            :user="{
+              side: 'right',
+              variant: 'soft',
+              avatar: {
+                icon: 'i-lucide-user'
+              },
+            }"
+            :assistant="{
+              side: 'left',
+              variant: 'soft',
+              avatar: {
+                icon: 'i-lucide-bot'
+              },
+            }"
             :messages="chat.messages"
             :status="chat.status"
             :spacing-offset="isOwner ? 160 : 0"

@@ -1,5 +1,6 @@
 import { ofetch } from 'ofetch'
 import type { H3Event } from 'h3'
+import { exchangeSSOCookieForToken } from '~/server/utils/tokenExchange'
 
 interface InternalServiceOptions {
   method?: string
@@ -15,9 +16,7 @@ interface SessionData {
 
 /**
  * Make an authenticated request to the internal service.
- * Reads x-auth-token from session and injects it as X-Auth-Token header.
- *
- * Throws with statusCode 401 if the token is missing or the internal service rejects it.
+ * On 401, attempts to refresh x-auth-token via SSO Cookie and retries once.
  */
 export async function useInternalService<T>(
   event: H3Event,
@@ -36,13 +35,44 @@ export async function useInternalService<T>(
     })
   }
 
-  return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
-    method: options.method || 'GET',
-    params: options.params,
-    body: options.body,
-    headers: {
-      'X-Auth-Token': xAuthToken,
-      ...options.headers
+  try {
+    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+      method: options.method || 'GET',
+      params: options.params,
+      body: options.body,
+      headers: {
+        'X-Auth-Token': xAuthToken,
+        ...options.headers
+      }
+    })
+  }
+  catch (error: unknown) {
+    const fetchError = error as { statusCode?: number }
+    if (fetchError.statusCode !== 401) {
+      throw error
     }
-  })
+
+    // Token expired — try refreshing via SSO Cookie
+    const newToken = await exchangeSSOCookieForToken(event)
+    if (!newToken) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'SSO session expired'
+      })
+    }
+
+    // Update session with new token
+    await setUserSession(event, { xAuthToken: newToken } as Record<string, unknown>)
+
+    // Retry the request with the new token
+    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+      method: options.method || 'GET',
+      params: options.params,
+      body: options.body,
+      headers: {
+        'X-Auth-Token': newToken,
+        ...options.headers
+      }
+    })
+  }
 }

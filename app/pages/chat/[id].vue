@@ -133,6 +133,7 @@ async function handleSubmit(e: Event) {
             :variant="panelOpen ? 'soft' : 'ghost'"
             size="sm"
             aria-label="浏览文件"
+            :aria-pressed="panelOpen"
             class="absolute top-3 right-3 z-10"
             @click="panelOpen = !panelOpen"
           />
@@ -142,7 +143,7 @@ async function handleSubmit(e: Event) {
             :messages="chat.messages"
             :status="chat.status"
             :spacing-offset="isOwner ? 160 : 0"
-            class="pb-4 sm:pb-6"
+            class="pt-3 pb-4 sm:pb-6"
           >
             <template #indicator>
               <div class="flex items-center gap-1.5">

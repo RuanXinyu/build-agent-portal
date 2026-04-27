@@ -56,6 +56,14 @@ function onPreviewKeydown(e: KeyboardEvent) {
   }
 }
 
+// Auto-focus overlay for Escape key
+const previewOverlay = ref<HTMLElement | null>(null)
+watch(maximizedFile, (path) => {
+  if (path) {
+    nextTick(() => previewOverlay.value?.focus())
+  }
+})
+
 const customTransport: ChatTransport<UIMessage> = {
   async sendMessages({
     chatId,
@@ -220,19 +228,11 @@ async function handleSubmit(e: Event) {
           <Transition name="fade">
             <div
               v-if="maximizedFile"
-              class="absolute inset-0 z-20 bg-default flex flex-col"
+              ref="previewOverlay"
+              tabindex="-1"
+              class="absolute inset-0 z-20 bg-default flex flex-col outline-none"
               @keydown="onPreviewKeydown"
             >
-              <!-- Toolbar -->
-              <div class="flex items-center gap-2 px-3 py-2 border-b border-default bg-elevated/30 text-sm shrink-0">
-                <div class="flex-1" />
-                <button
-                  class="inline-flex items-center justify-center size-7 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
-                  @click="onMinimizePreview"
-                >
-                  <UIcon name="i-lucide-minimize-2" class="size-4" />
-                </button>
-              </div>
               <!-- File preview -->
               <div class="flex-1 min-h-0">
                 <FilePreview

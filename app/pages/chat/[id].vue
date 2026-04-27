@@ -27,6 +27,34 @@ const isOwner = computed(() => data.value?.isOwner ?? false)
 const input = ref('')
 const lastTimestamp = ref(data.value?.lastTimestamp ?? 0)
 const panelOpen = ref(false)
+const maximizedFile = ref<string | null>(null)
+
+// Clear maximized state when panel closes
+watch(panelOpen, (open) => {
+  if (!open) {
+    maximizedFile.value = null
+  }
+})
+
+function onFileMaximize(path: string) {
+  maximizedFile.value = path
+}
+
+function onFileSelected(path: string) {
+  if (maximizedFile.value !== null) {
+    maximizedFile.value = path
+  }
+}
+
+function onMinimizePreview() {
+  maximizedFile.value = null
+}
+
+function onPreviewKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && maximizedFile.value) {
+    maximizedFile.value = null
+  }
+}
 
 const customTransport: ChatTransport<UIMessage> = {
   async sendMessages({
@@ -187,9 +215,42 @@ async function handleSubmit(e: Event) {
               />
             </template>
           </UChatPrompt>
+
+          <!-- Maximized file preview overlay -->
+          <Transition name="fade">
+            <div
+              v-if="maximizedFile"
+              class="absolute inset-0 z-20 bg-default flex flex-col"
+              @keydown="onPreviewKeydown"
+            >
+              <!-- Toolbar -->
+              <div class="flex items-center gap-2 px-3 py-2 border-b border-default bg-elevated/30 text-sm shrink-0">
+                <div class="flex-1" />
+                <button
+                  class="inline-flex items-center justify-center size-7 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
+                  @click="onMinimizePreview"
+                >
+                  <UIcon name="i-lucide-minimize-2" class="size-4" />
+                </button>
+              </div>
+              <!-- File preview -->
+              <div class="flex-1 min-h-0">
+                <FilePreview
+                  :file-path="maximizedFile"
+                  :embedded="false"
+                  @maximize="onMinimizePreview"
+                />
+              </div>
+            </div>
+          </Transition>
         </UContainer>
 
-        <FileBrowserPanel v-model:open="panelOpen" />
+        <FileBrowserPanel
+          v-model:open="panelOpen"
+          :maximized-file="maximizedFile"
+          @maximize="onFileMaximize"
+          @select-file="onFileSelected"
+        />
       </div>
     </template>
   </UDashboardPanel>
@@ -198,3 +259,15 @@ async function handleSubmit(e: Event) {
     <UError :error="{ statusMessage: 'Chat not found', statusCode: 404 }" class="min-h-full" />
   </UContainer>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

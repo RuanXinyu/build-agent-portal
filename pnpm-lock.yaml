@@ -83,6 +83,9 @@ importers:
       nuxt-skill-hub:
         specifier: 0.0.8
         version: 0.0.8(@ai-sdk/google@3.0.62(zod@4.3.6))(@ai-sdk/openai@3.0.52(zod@4.3.6))(@libsql/client@0.17.2)(ai@6.0.158(zod@4.3.6))(magicast@0.5.2)(pg@8.20.0)(unstorage@1.17.4(@vercel/blob@2.3.3)(db0@0.3.4(@libsql/client@0.17.2)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260316.1)(@libsql/client@0.17.2)(@opentelemetry/api@1.9.0)(pg@8.20.0)))(ioredis@5.10.0))
+      parse-diff:
+        specifier: ^0.12.0
+        version: 0.12.0
       shiki:
         specifier: ^4.0.2
         version: 4.0.2
@@ -5462,6 +5465,9 @@ packages:
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
+
+  parse-diff@0.12.0:
+    resolution: {integrity: sha512-2Xr5mW4Bqd4CqYq2zttfw/RZraK+KcRuJvNkJzbDk3ea67Ap525XeTvBdtDE5tigJMVzIx/DMUzsShAf6+5SCA==}
 
   parse-imports-exports@0.2.4:
     resolution: {integrity: sha512-4s6vd6dx1AotCx/RCI2m7t7GCh5bDRUtGNvRfHSP2wbBQdMi67pPe7mtzmgwcaQ8VKK/6IB7Glfyu3qdZJPybQ==}
@@ -12843,6 +12849,8 @@ snapshots:
   parent-module@1.0.1:
     dependencies:
       callsites: 3.1.0
+
+  parse-diff@0.12.0: {}
 
   parse-imports-exports@0.2.4:
     dependencies:

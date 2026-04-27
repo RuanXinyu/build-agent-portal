@@ -12,7 +12,9 @@
       "mcp__web-reader__webReader",
       "mcp__nuxt-ui-remote__get-component-metadata",
       "mcp__nuxt-ui-remote__search-components",
-      "mcp__nuxt-ui-remote__get-component"
+      "mcp__nuxt-ui-remote__get-component",
+      "WebSearch",
+      "Bash(npm install:*)"
     ]
   }
 }

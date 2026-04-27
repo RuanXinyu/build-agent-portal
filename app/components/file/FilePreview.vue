@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { VueMonacoEditor, VueMonacoDiffEditor } from '@guolao/vue-monaco-editor'
+import parseDiff from 'parse-diff'
 
 interface FileContentResponse {
   name: string
@@ -33,7 +34,7 @@ async function fetchData() {
       query: { path: props.filePath }
     })
   } catch (e: unknown) {
-    error.value = e
+    error.value = e instanceof Error ? e : new Error(String(e))
   } finally {
     pending.value = false
   }
@@ -79,7 +80,6 @@ function getMonacoLanguage(language: string | null): string {
     dockerfile: 'dockerfile',
     diff: 'diff',
     graphql: 'graphql',
-    graphql: 'graphql',
     plain_text: 'plaintext'
   }
   return map[language.toLowerCase()] || 'plaintext'
@@ -115,7 +115,6 @@ function getLanguageDisplay(language: string | null): string {
     sql: 'SQL',
     dockerfile: 'Dockerfile',
     graphql: 'GraphQL',
-    diff: 'Diff',
     diff: 'Diff',
     plain_text: 'Plain Text'
   }
@@ -184,6 +183,65 @@ const downloadUrl = computed(() => {
   if (!props.filePath) return ''
   return `/api/v1/files/download?path=${encodeURIComponent(props.filePath)}`
 })
+
+// --- Diff/Patch parsing ---
+
+function parsePatchContent(content: string): { original: string, modified: string, language: string } {
+  const files = parseDiff(content)
+  if (!files.length) {
+    return { original: '', modified: '', language: 'plaintext' }
+  }
+
+  const originalLines: string[] = []
+  const modifiedLines: string[] = []
+
+  for (const file of files) {
+    for (const chunk of file.chunks) {
+      for (const change of chunk.changes) {
+        const lineContent = change.content.slice(1) // strip prefix char (+/-/space)
+        if (change.type === 'normal') {
+          originalLines.push(lineContent)
+          modifiedLines.push(lineContent)
+        } else if (change.type === 'del') {
+          originalLines.push(lineContent)
+        } else if (change.type === 'add') {
+          modifiedLines.push(lineContent)
+        }
+      }
+    }
+  }
+
+  // Detect language from the patched file name
+  const fileName = files[0]?.to || files[0]?.from || ''
+  const ext = fileName.includes('.') ? '.' + fileName.split('.').pop() : ''
+  const langMap: Record<string, string> = {
+    '.ts': 'typescript', '.tsx': 'typescript',
+    '.js': 'javascript', '.jsx': 'javascript',
+    '.vue': 'html', '.py': 'python', '.css': 'css',
+    '.html': 'html', '.json': 'json', '.yaml': 'yaml',
+    '.yml': 'yaml', '.go': 'go', '.rs': 'rust',
+    '.java': 'java', '.c': 'c', '.cpp': 'cpp',
+    '.rb': 'ruby', '.php': 'php', '.swift': 'swift',
+    '.kt': 'kotlin', '.sql': 'sql', '.sh': 'shell',
+    '.md': 'markdown'
+  }
+  const language = langMap[ext.toLowerCase()] || 'plaintext'
+
+  return {
+    original: originalLines.join('\n'),
+    modified: modifiedLines.join('\n'),
+    language
+  }
+}
+
+const diffData = computed(() => {
+  if (!isDiff.value || !data.value?.content) {
+    return { original: '', modified: '', language: 'plaintext' }
+  }
+  return parsePatchContent(data.value.content)
+})
+
+const diffMode = ref<'side-by-side' | 'inline'>('side-by-side')
 
 // --- Monaco Editor options ---
 
@@ -260,6 +318,14 @@ function toggleMaximize() {
           </template>
         </div>
         <div class="flex items-center gap-1 shrink-0">
+          <button
+            v-if="isDiff"
+            class="inline-flex items-center justify-center size-7 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
+            title="切换对比模式"
+            @click="diffMode = diffMode === 'side-by-side' ? 'inline' : 'side-by-side'"
+          >
+            <UIcon :name="diffMode === 'side-by-side' ? 'i-lucide-columns' : 'i-lucide-align-left'" class="size-4" />
+          </button>
           <a
             :href="downloadUrl"
             target="_blank"
@@ -289,12 +355,12 @@ function toggleMaximize() {
         <!-- Diff/Patch rendering -->
         <div v-else-if="isDiff" class="flex-1 overflow-hidden">
           <VueMonacoDiffEditor
-            :original="''"
-            :modified="data.content || ''"
-            :language="getMonacoLanguage(data.language)"
+            :original="diffData.original"
+            :modified="diffData.modified"
+            :language="diffData.language"
             :options="{
               readOnly: true,
-              renderSideBySide: true,
+              renderSideBySide: diffMode === 'side-by-side',
               minimap: { enabled: false },
               scrollBeyondLastLine: false,
               lineNumbers: 'on',

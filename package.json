@@ -38,6 +38,7 @@
     "nuxt-charts": "^2.1.4",
     "nuxt-csurf": "^1.6.5",
     "nuxt-skill-hub": "0.0.8",
+    "parse-diff": "^0.12.0",
     "shiki": "^4.0.2",
     "striptags": "3.2.0",
     "tailwindcss": "^4.2.2",

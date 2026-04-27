@@ -121,11 +121,10 @@ async function handleSubmit(e: Event) {
     v-if="data?.id"
     id="chat"
     class="relative min-h-0"
-    :ui="{ body: 'p-0 sm:p-0 overscroll-none' }"
+    :ui="{ body: 'flex flex-col flex-1 overflow-y-auto p-0 sm:p-0 overscroll-none' }"
   >
     <template #body>
       <div class="flex h-full">
-        <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0 overflow-hidden relative">
           <!-- Floating folder toggle button -->
           <UButton
             :icon="panelOpen ? 'i-lucide-folder-open' : 'i-lucide-folder'"
@@ -137,6 +136,7 @@ async function handleSubmit(e: Event) {
             class="absolute top-3 right-3 z-10"
             @click="panelOpen = !panelOpen"
           />
+        <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0 min-h-0 overflow-y-auto relative">
 
           <UChatMessages
             should-auto-scroll

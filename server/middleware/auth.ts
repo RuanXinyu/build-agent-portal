@@ -6,6 +6,13 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+  const config = useRuntimeConfig()
+
+  // If static token is set, useInternalService handles it — no need for SSO refresh
+  if (config.staticAuthToken) {
+    return
+  }
+
   const session = await getUserSession(event)
   const xAuthToken = session.secure?.xAuthToken
 

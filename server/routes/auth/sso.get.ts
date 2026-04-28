@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   // Error from SSO
   if (error) {
     console.error('[SSO] OAuth error:', error)
-    return sendRedirect(event, '/login?error=' + encodeURIComponent(error))
+    return sendRedirect(event, '/home?error=' + encodeURIComponent(error))
   }
 
   // Callback — exchange code for tokens
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     const xAuthToken = await exchangeSSOCookieForToken(event)
     if (!xAuthToken) {
       console.error('[SSO] Failed to exchange SSO Cookie for x-auth-token')
-      return sendRedirect(event, '/login?error=' + encodeURIComponent('token_exchange_failed'))
+      return sendRedirect(event, '/home?error=' + encodeURIComponent('token_exchange_failed'))
     }
 
     // Step 4: Upsert user in local database
@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
 
     if (!user) {
       console.error('[SSO] Failed to create or find user')
-      return sendRedirect(event, '/login?error=' + encodeURIComponent('user_creation_failed'))
+      return sendRedirect(event, '/home?error=' + encodeURIComponent('user_creation_failed'))
     }
 
     // Step 5: Set session with user + xAuthToken in secure field
@@ -87,9 +87,9 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    return sendRedirect(event, '/')
+    return sendRedirect(event, '/chat')
   } catch (err) {
     console.error('[SSO] OAuth callback error:', err)
-    return sendRedirect(event, '/login?error=' + encodeURIComponent('callback_error'))
+    return sendRedirect(event, '/home?error=' + encodeURIComponent('callback_error'))
   }
 })

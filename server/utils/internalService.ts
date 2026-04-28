@@ -8,11 +8,6 @@ interface InternalServiceOptions {
   headers?: Record<string, string>
 }
 
-interface SessionData {
-  xAuthToken?: string
-  [key: string]: unknown
-}
-
 /**
  * Make an authenticated request to the internal service.
  * On 401, attempts to refresh x-auth-token via SSO Cookie and retries once.
@@ -24,8 +19,7 @@ export async function useInternalService<T>(
 ): Promise<T> {
   const config = useRuntimeConfig()
   const session = await getUserSession(event)
-  const sessionData = session as SessionData
-  const xAuthToken = sessionData.xAuthToken
+  const xAuthToken = session.secure?.xAuthToken
 
   if (!xAuthToken) {
     throw createError({
@@ -60,7 +54,7 @@ export async function useInternalService<T>(
     }
 
     // Update session with new token
-    await setUserSession(event, { xAuthToken: newToken } as Record<string, unknown>)
+    await setUserSession(event, { secure: { xAuthToken: newToken } })
 
     // Retry the request with the new token
     return await ofetch<T>(`${config.flaskApiUrl}${path}`, {

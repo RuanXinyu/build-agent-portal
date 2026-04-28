@@ -9,12 +9,16 @@ export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
   const xAuthToken = session.secure?.xAuthToken
 
+  console.log('[SSO] Auth middleware:', url.pathname, 'hasToken:', !!xAuthToken)
+
   // If no x-auth-token in session, attempt to exchange SSO Cookie for one
   if (!xAuthToken) {
     const newToken = await exchangeSSOCookieForToken(event)
     if (newToken) {
+      console.log('[SSO] Auth middleware: token refreshed via SSO Cookie')
       await setUserSession(event, { secure: { xAuthToken: newToken } })
     } else {
+      console.warn('[SSO] Auth middleware: no token, authentication required for', url.pathname)
       throw createError({
         statusCode: 401,
         statusMessage: 'Authentication required'

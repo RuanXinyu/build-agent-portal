@@ -15,23 +15,27 @@ export async function exchangeSSOCookieForToken(event: H3Event): Promise<string 
   const ssoCookie = getCookie(event, config.ssoCookieName)
 
   if (!ssoCookie) {
+    console.log('[SSO] No SSO Cookie found in request')
     return null
   }
 
   try {
+    console.log('[SSO] Exchanging SSO Cookie for x-auth-token')
     const res = await ofetch<TokenExchangeResponse>(config.tokenExchangeUrl, {
       method: 'POST',
       headers: {
         Cookie: `${config.ssoCookieName}=${ssoCookie}`
       }
     })
+    console.log('[SSO] Token exchange successful')
     return res.token
   } catch (error: unknown) {
     const status = (error as { statusCode?: number })?.statusCode
     if (status === 401) {
-      console.warn('SSO Cookie expired during token exchange')
+      console.warn('[SSO] SSO Cookie expired during token exchange')
       return null
     }
+    console.error('[SSO] Token exchange error:', error)
     throw error
   }
 }

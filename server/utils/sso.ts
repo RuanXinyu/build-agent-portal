@@ -26,6 +26,7 @@ export function getSSOAuthUrl(state: string): string {
     redirect_uri: config.ssoRedirectUrl,
     state
   })
+  console.log('[SSO] Generated OAuth URL, state:', state)
   return `${config.ssoAuthorizeUrl}?${params.toString()}`
 }
 
@@ -33,36 +34,52 @@ export function getSSOAuthUrl(state: string): string {
  * Exchange an authorization code for an access token.
  */
 export async function exchangeCodeForToken(code: string): Promise<SSOTokenResponse> {
+  console.log('[SSO] Exchanging authorization code for access token')
   const config = useRuntimeConfig()
-  return await ofetch<SSOTokenResponse>(config.ssoTokenUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      client_id: config.ssoClientId,
-      client_secret: config.ssoClientSecret,
-      redirect_uri: config.ssoRedirectUrl
-    }).toString()
-  })
+  try {
+    const result = await ofetch<SSOTokenResponse>(config.ssoTokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        client_id: config.ssoClientId,
+        client_secret: config.ssoClientSecret,
+        redirect_uri: config.ssoRedirectUrl
+      }).toString()
+    })
+    console.log('[SSO] Token exchange successful')
+    return result
+  } catch (error) {
+    console.error('[SSO] Token exchange failed:', error)
+    throw error
+  }
 }
 
 /**
  * Fetch user info from SSO using the access token.
  */
 export async function fetchSSOUserInfo(accessToken: string): Promise<SSOUser> {
+  console.log('[SSO] Fetching user info from SSO')
   const config = useRuntimeConfig()
-  return await ofetch<SSOUser>(config.ssoUserinfoUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: {
-      client_id: config.ssoClientId,
-      access_token: accessToken,
-      scope: 'base.profile'
-    }
-  })
+  try {
+    const result = await ofetch<SSOUser>(config.ssoUserinfoUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: {
+        client_id: config.ssoClientId,
+        access_token: accessToken,
+        scope: 'base.profile'
+      }
+    })
+    console.log('[SSO] User info fetched:', result.username || result.id)
+    return result
+  } catch (error) {
+    console.error('[SSO] User info fetch failed:', error)
+    throw error
+  }
 }

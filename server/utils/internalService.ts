@@ -21,6 +21,8 @@ export async function useInternalService<T>(
   const session = await getUserSession(event)
   const xAuthToken = session.secure?.xAuthToken
 
+  console.log('[SSO] Internal service call:', path, 'hasToken:', !!xAuthToken)
+
   if (!xAuthToken) {
     throw createError({
       statusCode: 401,
@@ -47,6 +49,7 @@ export async function useInternalService<T>(
     // Token expired — try refreshing via SSO Cookie
     const newToken = await exchangeSSOCookieForToken(event)
     if (!newToken) {
+      console.warn('[SSO] SSO session expired, cannot refresh token')
       throw createError({
         statusCode: 401,
         statusMessage: 'SSO session expired'
@@ -55,6 +58,8 @@ export async function useInternalService<T>(
 
     // Update session with new token
     await setUserSession(event, { secure: { xAuthToken: newToken } })
+
+    console.log('[SSO] Token refreshed, retrying request:', path)
 
     // Retry the request with the new token
     return await ofetch<T>(`${config.flaskApiUrl}${path}`, {

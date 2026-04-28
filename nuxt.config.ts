@@ -37,7 +37,10 @@ export default defineNuxtConfig({
     ssoRedirectUrl: process.env.NUXT_SSO_REDIRECT_URL || '',
     tokenExchangeUrl: process.env.NUXT_TOKEN_EXCHANGE_URL || '',
     ssoCookieName: process.env.NUXT_SSO_COOKIE_NAME || 'sso_token',
-    staticAuthToken: process.env.NUXT_STATIC_AUTH_TOKEN || ''
+    staticAuthToken: process.env.NUXT_STATIC_AUTH_TOKEN || '',
+    public: {
+      hasStaticAuthToken: !!process.env.NUXT_STATIC_AUTH_TOKEN
+    }
   },
 
   nitro: {

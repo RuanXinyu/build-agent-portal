@@ -2,6 +2,29 @@
 definePageMeta({
   layout: 'default'
 })
+
+const route = useRoute()
+const toast = useToast()
+
+const errorMessages: Record<string, string> = {
+  token_exchange_failed: '令牌交换失败，请重试',
+  user_creation_failed: '用户创建失败，请重试',
+  callback_error: '登录过程中出现错误，请重试',
+  access_denied: '您拒绝了授权请求'
+}
+
+onMounted(() => {
+  const error = route.query.error as string
+  if (error) {
+    toast.add({
+      title: '登录失败',
+      description: errorMessages[error] || '登录失败，请重试',
+      color: 'error'
+    })
+    // Clean the URL
+    navigateTo('/home', { replace: true })
+  }
+})
 </script>
 
 <template>

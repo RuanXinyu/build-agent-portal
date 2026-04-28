@@ -34,15 +34,16 @@ const navItems = computed<NavigationMenuItem[]>(() => [
     <template #right>
       <slot name="right" />
       <UserMenu v-if="loggedIn" />
-      <UButton
-        v-else
-        label="登录"
-        icon="i-lucide-log-in"
-        color="neutral"
-        variant="ghost"
-        @click="navigateTo('/login')"
-      />
-      <UColorModeButton />
+      <template v-else>
+        <UButton
+          label="登录"
+          icon="i-lucide-log-in"
+          color="neutral"
+          variant="ghost"
+          @click="window.location.href = '/auth/sso'"
+        />
+        <UColorModeButton />
+      </template>
     </template>
 
     <template #body>

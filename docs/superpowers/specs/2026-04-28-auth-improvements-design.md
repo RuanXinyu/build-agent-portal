@@ -67,7 +67,7 @@ In `server/middleware/auth.ts`:
 ### Behavior
 - All login flows go directly to `window.location.href = '/auth/sso'`
 - SSO callback redirects to `/chat` on success
-- Error handling: SSO errors redirect to `/chat?error=<code>` and show a toast
+- Error handling: SSO errors redirect to `/home?error=<code>` and show a toast on the home page (since `/chat` requires auth and would trigger another 401 loop)
 
 ## Part 4: Global 401 Interception
 
@@ -106,5 +106,5 @@ No additional code changes needed beyond Parts 1 and 4.
 | Static token set, token invalid (401) | Show error toast, no SSO redirect |
 | No static token, no session | SSO redirect on 401 |
 | No static token, expired session | Attempt SSO cookie refresh → if fails → 401 → SSO redirect |
-| SSO login cancelled | User lands on `/chat?error=access_denied`, sees toast |
+| SSO login cancelled | User lands on `/home?error=access_denied`, sees toast |
 | User clicks logout | Clear session, navigate to `/home` |

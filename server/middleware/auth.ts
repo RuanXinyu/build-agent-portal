@@ -26,6 +26,10 @@ export default defineEventHandler(async (event) => {
       await setUserSession(event, { secure: { xAuthToken: newToken } })
     } else {
       console.warn('[SSO] Auth middleware: no token for', url.pathname)
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Authentication required'
+      })
     }
   }
 })

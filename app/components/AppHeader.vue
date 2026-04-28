@@ -37,6 +37,7 @@ const navItems = computed<NavigationMenuItem[]>(() => [
 
     <template #right>
       <slot name="right" />
+      <UColorModeButton />
       <UserMenu v-if="loggedIn" />
       <template v-else>
         <UButton
@@ -46,7 +47,6 @@ const navItems = computed<NavigationMenuItem[]>(() => [
           variant="ghost"
           @click="loginWithSSO()"
         />
-        <UColorModeButton />
       </template>
     </template>
 

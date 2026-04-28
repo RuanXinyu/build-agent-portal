@@ -7,6 +7,10 @@ defineProps<{
 
 const { loggedIn } = useUserSession()
 
+function loginWithSSO() {
+  window.location.href = '/auth/sso'
+}
+
 const navItems = computed<NavigationMenuItem[]>(() => [
   { label: '首页', to: '/home', icon: 'i-lucide-home' },
   { label: '工具', to: '/cli', icon: 'ic:round-terminal' },
@@ -40,7 +44,7 @@ const navItems = computed<NavigationMenuItem[]>(() => [
           icon="i-lucide-log-in"
           color="neutral"
           variant="ghost"
-          @click="window.location.href = '/auth/sso'"
+          @click="loginWithSSO()"
         />
         <UColorModeButton />
       </template>

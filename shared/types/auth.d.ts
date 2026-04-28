@@ -9,6 +9,10 @@ declare module '#auth-utils' {
     provider: 'sso'
     providerId: string
   }
+
+  interface SecureSessionData {
+    xAuthToken: string
+  }
 }
 
 export {}

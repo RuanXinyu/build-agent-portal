@@ -1,4 +1,6 @@
 import { and, eq } from 'drizzle-orm'
+import { getSSOAuthUrl, exchangeCodeForToken, fetchSSOUserInfo } from '../../utils/sso'
+import { exchangeSSOCookieForToken } from '../../utils/tokenExchange'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -19,8 +21,8 @@ export default defineEventHandler(async (event) => {
 
   // Error from SSO
   if (error) {
-    console.error('SSO OAuth error:', error)
-    return sendRedirect(event, '/')
+    console.error('[SSO] OAuth error:', error)
+    return sendRedirect(event, '/login?error=' + encodeURIComponent(error))
   }
 
   // Callback — exchange code for tokens
@@ -34,8 +36,8 @@ export default defineEventHandler(async (event) => {
     // Step 3: Exchange SSO Cookie for x-auth-token
     const xAuthToken = await exchangeSSOCookieForToken(event)
     if (!xAuthToken) {
-      console.error('Failed to exchange SSO Cookie for x-auth-token')
-      return sendRedirect(event, '/')
+      console.error('[SSO] Failed to exchange SSO Cookie for x-auth-token')
+      return sendRedirect(event, '/login?error=' + encodeURIComponent('token_exchange_failed'))
     }
 
     // Step 4: Upsert user in local database
@@ -65,11 +67,11 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!user) {
-      console.error('Failed to create or find user')
-      return sendRedirect(event, '/')
+      console.error('[SSO] Failed to create or find user')
+      return sendRedirect(event, '/login?error=' + encodeURIComponent('user_creation_failed'))
     }
 
-    // Step 5: Set session with user + x-auth-token
+    // Step 5: Set session with user + xAuthToken in secure field
     await setUserSession(event, {
       user: {
         id: user.id,
@@ -80,12 +82,14 @@ export default defineEventHandler(async (event) => {
         provider: 'sso',
         providerId: user.providerId
       },
-      xAuthToken
+      secure: {
+        xAuthToken
+      }
     })
 
     return sendRedirect(event, '/')
   } catch (err) {
-    console.error('SSO OAuth callback error:', err)
-    return sendRedirect(event, '/')
+    console.error('[SSO] OAuth callback error:', err)
+    return sendRedirect(event, '/login?error=' + encodeURIComponent('callback_error'))
   }
 })

@@ -40,7 +40,7 @@ const navItems = computed<NavigationMenuItem[]>(() => [
         icon="i-lucide-log-in"
         color="neutral"
         variant="ghost"
-        @click="navigateTo('/auth/sso')"
+        @click="navigateTo('/login')"
       />
       <UColorModeButton />
     </template>

@@ -5,7 +5,7 @@ export function useAuthFetch() {
     } catch (error: unknown) {
       const fetchError = error as { statusCode?: number }
       if (fetchError.statusCode === 401) {
-        navigateTo('/auth/sso')
+        navigateTo('/login')
       }
       throw error
     }

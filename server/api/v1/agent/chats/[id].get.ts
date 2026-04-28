@@ -132,8 +132,7 @@ export default defineEventHandler(async (event) => {
   // SSE streaming mode
   if (isStream) {
     const session = await getUserSession(event)
-    const sessionData = session as { xAuthToken?: string }
-    const xAuthToken = sessionData.xAuthToken
+    const xAuthToken = session.secure?.xAuthToken
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
@@ -246,8 +245,7 @@ export default defineEventHandler(async (event) => {
 
   // JSON initial load mode
   const session = await getUserSession(event)
-  const sessionData = session as { xAuthToken?: string }
-  const xAuthToken = sessionData.xAuthToken
+  const xAuthToken = session.secure?.xAuthToken
   const config = useRuntimeConfig()
 
   const response = await fetch(

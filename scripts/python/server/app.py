@@ -32,13 +32,18 @@ MOCK_TEST_USER = {
 
 @app.before_request
 def validate_xauth_token():
-    """Validate X-Auth-Token for /api/ routes."""
+    """Validate X-Auth-Token for /api/ routes.
+
+    If a token is provided, it must be valid.
+    If no token is provided, allow through (mock data is public).
+    """
     if not request.path.startswith("/api/"):
         return None
 
     x_auth_token = request.headers.get("X-Auth-Token", "")
     if not x_auth_token:
-        return jsonify({"error": "Missing X-Auth-Token header"}), 401
+        # No token — allow anonymous access for mock data
+        return None
 
     if x_auth_token not in MOCK_XAUTH_TOKENS:
         return jsonify({"error": "Invalid X-Auth-Token"}), 401

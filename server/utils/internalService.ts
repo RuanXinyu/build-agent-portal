@@ -23,11 +23,9 @@ export async function useInternalService<T>(
 
   console.log('[SSO] Internal service call:', path, 'hasToken:', !!xAuthToken)
 
-  if (!xAuthToken) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'No x-auth-token in session'
-    })
+  const headers: Record<string, string> = { ...options.headers }
+  if (xAuthToken) {
+    headers['X-Auth-Token'] = xAuthToken
   }
 
   try {
@@ -35,10 +33,7 @@ export async function useInternalService<T>(
       method: options.method || 'GET',
       params: options.params,
       body: options.body,
-      headers: {
-        'X-Auth-Token': xAuthToken,
-        ...options.headers
-      }
+      headers
     })
   } catch (error: unknown) {
     const fetchError = error as { statusCode?: number }

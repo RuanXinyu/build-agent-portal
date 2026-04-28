@@ -18,11 +18,7 @@ export default defineEventHandler(async (event) => {
       console.log('[SSO] Auth middleware: token refreshed via SSO Cookie')
       await setUserSession(event, { secure: { xAuthToken: newToken } })
     } else {
-      console.warn('[SSO] Auth middleware: no token, authentication required for', url.pathname)
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Authentication required'
-      })
+      console.warn('[SSO] Auth middleware: no token for', url.pathname)
     }
   }
 })

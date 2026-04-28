@@ -24,7 +24,7 @@ const errorMessage = computed(() => {
         label="SSO 登录"
         icon="i-lucide-log-in"
         size="lg"
-        @click="navigateTo('/auth/sso')"
+        @click="window.location.href = '/auth/sso'"
       />
     </div>
   </div>

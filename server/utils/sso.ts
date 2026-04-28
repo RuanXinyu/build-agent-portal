@@ -55,8 +55,14 @@ export async function exchangeCodeForToken(code: string): Promise<SSOTokenRespon
 export async function fetchSSOUserInfo(accessToken: string): Promise<SSOUser> {
   const config = useRuntimeConfig()
   return await ofetch<SSOUser>(config.ssoUserinfoUrl, {
+    method: 'POST',
     headers: {
-      Authorization: `Bearer ${accessToken}`
+      'Content-Type': 'application/json'
+    },
+    body: {
+      client_id: config.ssoClientId,
+      access_token: accessToken,
+      scope: 'base.profile'
     }
   })
 }

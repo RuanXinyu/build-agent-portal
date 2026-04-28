@@ -1,97 +1,17 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 
-defineProps<{
-  collapsed?: boolean
-}>()
-
 const colorMode = useColorMode()
-const appConfig = useAppConfig()
-const { user, clear } = useUserSession()
-
-const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
-const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
+const { clear } = useUserSession()
 
 const items = computed<DropdownMenuItem[][]>(() => ([[{
-  type: 'label',
-  label: user.value?.name || user.value?.username,
-  avatar: {
-    src: user.value?.avatar,
-    alt: user.value?.name || user.value?.username
+  label: colorMode.value === 'dark' ? '浅色模式' : '深色模式',
+  icon: colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon',
+  onSelect() {
+    colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
   }
 }], [{
-  label: 'Theme',
-  icon: 'i-lucide-palette',
-  children: [{
-    label: 'Primary',
-    slot: 'chip',
-    chip: appConfig.ui.colors.primary,
-    content: {
-      align: 'center',
-      collisionPadding: 16
-    },
-    children: colors.map(color => ({
-      label: color,
-      chip: color,
-      slot: 'chip',
-      checked: appConfig.ui.colors.primary === color,
-      type: 'checkbox',
-      onSelect: (e) => {
-        e.preventDefault()
-
-        appConfig.ui.colors.primary = color
-      }
-    }))
-  }, {
-    label: 'Neutral',
-    slot: 'chip',
-    chip: appConfig.ui.colors.neutral === 'neutral' ? 'old-neutral' : appConfig.ui.colors.neutral,
-    content: {
-      align: 'end',
-      collisionPadding: 16
-    },
-    children: neutrals.map(color => ({
-      label: color,
-      chip: color === 'neutral' ? 'old-neutral' : color,
-      slot: 'chip',
-      type: 'checkbox',
-      checked: appConfig.ui.colors.neutral === color,
-      onSelect: (e) => {
-        e.preventDefault()
-
-        appConfig.ui.colors.neutral = color
-      }
-    }))
-  }]
-}, {
-  label: 'Appearance',
-  icon: 'i-lucide-sun-moon',
-  children: [{
-    label: 'Light',
-    icon: 'i-lucide-sun',
-    type: 'checkbox',
-    checked: colorMode.value === 'light',
-    onSelect(e: Event) {
-      e.preventDefault()
-
-      colorMode.preference = 'light'
-    }
-  }, {
-    label: 'Dark',
-    icon: 'i-lucide-moon',
-    type: 'checkbox',
-    checked: colorMode.value === 'dark',
-    onUpdateChecked(checked: boolean) {
-      if (checked) {
-        colorMode.preference = 'dark'
-      }
-    },
-    onSelect(e: Event) {
-      e.preventDefault()
-    }
-  }]
-}], [{
-  label: 'Log out',
+  label: '退出登录',
   icon: 'i-lucide-log-out',
   onSelect() {
     clear()
@@ -103,38 +23,15 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
 <template>
   <UDropdownMenu
     :items="items"
-    :content="{ align: 'center', collisionPadding: 12 }"
-    :ui="{ content: collapsed ? 'w-48' : 'w-(--reka-dropdown-menu-trigger-width)' }"
+    :content="{ align: 'end', collisionPadding: 12 }"
+    :ui="{ content: 'w-40' }"
   >
     <UButton
-      v-bind="{
-        label: collapsed ? undefined : (user?.name || user?.username),
-        trailingIcon: collapsed ? undefined : 'i-lucide-chevrons-up-down'
-      }"
-      :avatar="{
-        src: user?.avatar || undefined,
-        alt: user?.name || user?.username
-      }"
+      icon="i-lucide-user"
       color="neutral"
       variant="ghost"
-      block
-      :square="collapsed"
+      size="sm"
       class="data-[state=open]:bg-elevated"
-      :ui="{
-        trailingIcon: 'text-dimmed'
-      }"
     />
-
-    <template #chip-leading="{ item }">
-      <div class="inline-flex items-center justify-center shrink-0 size-5">
-        <span
-          class="rounded-full ring ring-bg bg-(--chip-light) dark:bg-(--chip-dark) size-2"
-          :style="{
-            '--chip-light': `var(--color-${(item as any).chip}-500)`,
-            '--chip-dark': `var(--color-${(item as any).chip}-400)`
-          }"
-        />
-      </div>
-    </template>
   </UDropdownMenu>
 </template>

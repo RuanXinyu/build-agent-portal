@@ -1,13 +1,20 @@
 <script setup lang="ts">
+interface TreeEntry {
+  filename: string
+  type: 'dir' | 'file'
+  size?: number
+  files?: TreeEntry[]
+}
+
 interface FileEntry {
   name: string
   path: string
-  type: 'directory' | 'file'
+  type: 'dir' | 'file'
   size?: number
-  language?: string | null
 }
 
 const props = defineProps<{
+  chatId: string
   currentPath: string
   selectedFilePath: string | null
 }>()
@@ -17,37 +24,69 @@ const emit = defineEmits<{
   selectFile: [path: string]
 }>()
 
-const data = ref<{ entries: FileEntry[] } | null>(null)
+const treeData = ref<TreeEntry[] | null>(null)
 const pending = ref(false)
 const error = ref<Error | null>(null)
 
-async function fetchData() {
+async function fetchTree() {
   pending.value = true
   error.value = null
   try {
-    data.value = await $fetch<{ entries: FileEntry[] }>('/api/v1/files', {
-      query: { path: props.currentPath }
+    const result = await $fetch<{ files: TreeEntry[] }>(`/api/v1/agent/chats/${props.chatId}/files`, {
+      query: { filepath: '/' }
     })
+    treeData.value = result.files
   } catch (e: unknown) {
-    error.value = e
+    error.value = e instanceof Error ? e : new Error(String(e))
   } finally {
     pending.value = false
   }
 }
 
-watch(() => props.currentPath, () => fetchData(), { immediate: true })
+fetchTree()
 
-defineExpose({ refresh: fetchData })
+defineExpose({ refresh: fetchTree })
 
-// Breadcrumb segments computed from currentPath
+// Find a node in the tree by path segments
+function findNode(path: string): TreeEntry[] | null {
+  if (path === '/' || path === '') return treeData.value
+  const segments = path.split('/').filter(Boolean)
+  let current = treeData.value
+  for (const segment of segments) {
+    if (!current) return null
+    const node = current.find(e => e.filename === segment && e.type === 'dir')
+    if (!node || !node.files) return null
+    current = node.files
+  }
+  return current
+}
+
+// Flatten current directory entries for display
+const entries = computed<FileEntry[]>(() => {
+  const nodes = findNode(props.currentPath)
+  if (!nodes) return []
+
+  return nodes.map(node => {
+    const prefix = props.currentPath === '/' ? '' : props.currentPath
+    const entryPath = `${prefix}/${node.filename}`
+    return {
+      name: node.filename,
+      path: entryPath,
+      type: node.type,
+      size: node.type === 'file' ? node.size : undefined,
+    }
+  })
+})
+
+// Breadcrumb segments
 const breadcrumbs = computed(() => {
-  if (!props.currentPath || props.currentPath === '~') {
+  if (!props.currentPath || props.currentPath === '/') {
     return []
   }
   const segments = props.currentPath.split('/').filter(Boolean)
   return segments.map((segment, index) => ({
-    label: segment === '~' ? '~' : segment,
-    path: segments.slice(0, index + 1).join('/')
+    label: segment,
+    path: '/' + segments.slice(0, index + 1).join('/')
   }))
 })
 
@@ -60,40 +99,26 @@ function selectFile(entry: FileEntry) {
 }
 
 function getFileIcon(entry: FileEntry): string {
-  if (entry.type === 'directory') {
+  if (entry.type === 'dir') {
     return 'i-lucide-folder'
   }
-  const language = entry.language?.toLowerCase() || ''
-  const iconMap: Record<string, string> = {
-    javascript: 'i-lucide-file-code-2',
-    typescript: 'i-lucide-file-code-2',
-    python: 'i-lucide-file-code-2',
-    java: 'i-lucide-file-code-2',
-    c: 'i-lucide-file-code-2',
-    cpp: 'i-lucide-file-code-2',
-    go: 'i-lucide-file-code-2',
-    rust: 'i-lucide-file-code-2',
-    ruby: 'i-lucide-file-code-2',
-    php: 'i-lucide-file-code-2',
-    swift: 'i-lucide-file-code-2',
-    kotlin: 'i-lucide-file-code-2',
-    vue: 'i-lucide-file-code-2',
-    html: 'i-lucide-file-code-2',
-    css: 'i-lucide-file-code-2',
-    scss: 'i-lucide-file-code-2',
-    less: 'i-lucide-file-code-2',
-    shell: 'i-lucide-file-code-2',
-    bash: 'i-lucide-file-code-2',
-    markdown: 'i-lucide-file-text',
-    json: 'i-lucide-braces',
-    yaml: 'i-lucide-file-text',
-    toml: 'i-lucide-file-text',
-    xml: 'i-lucide-file-text',
-    sql: 'i-lucide-database',
-    dockerfile: 'i-lucide-container',
-    image: 'i-lucide-image'
+  const name = entry.name.toLowerCase()
+  const extMap: Record<string, string> = {
+    '.ts': 'i-lucide-file-code-2', '.tsx': 'i-lucide-file-code-2',
+    '.js': 'i-lucide-file-code-2', '.jsx': 'i-lucide-file-code-2',
+    '.vue': 'i-lucide-file-code-2', '.py': 'i-lucide-file-code-2',
+    '.json': 'i-lucide-braces', '.md': 'i-lucide-file-text',
+    '.css': 'i-lucide-file-code-2', '.html': 'i-lucide-file-code-2',
+    '.sql': 'i-lucide-database', '.sh': 'i-lucide-file-code-2',
+    '.yml': 'i-lucide-file-text', '.yaml': 'i-lucide-file-text',
+    '.toml': 'i-lucide-file-text', '.xml': 'i-lucide-file-text',
+    '.patch': 'i-lucide-git-compare', '.diff': 'i-lucide-git-compare',
   }
-  return iconMap[language] || 'i-lucide-file'
+  for (const [ext, icon] of Object.entries(extMap)) {
+    if (name.endsWith(ext)) return icon
+  }
+  if (name === 'dockerfile') return 'i-lucide-container'
+  return 'i-lucide-file'
 }
 
 function formatFileSize(bytes?: number): string {
@@ -116,7 +141,7 @@ function isFileSelected(entry: FileEntry): boolean {
     <div class="flex items-center gap-1 px-3 py-2 border-b border-default bg-elevated/30 text-sm overflow-x-auto shrink-0">
       <button
         class="flex items-center gap-1 text-muted hover:text-highlighted transition-colors px-1.5 py-0.5 rounded hover:bg-elevated/50"
-        @click="navigateTo('~')"
+        @click="navigateTo('/')"
       >
         <UIcon name="i-lucide-home" class="size-4" />
       </button>
@@ -146,26 +171,26 @@ function isFileSelected(entry: FileEntry): boolean {
         variant="ghost"
         icon="i-lucide-refresh-cw"
         label="重试"
-        @click="fetchData()"
+        @click="fetchTree()"
       />
     </div>
 
     <!-- Empty directory -->
-    <div v-else-if="data && data.entries.length === 0" class="flex flex-col items-center justify-center gap-2 py-12 text-muted">
+    <div v-else-if="entries.length === 0 && treeData !== null" class="flex flex-col items-center justify-center gap-2 py-12 text-muted">
       <UIcon name="i-lucide-folder-open" class="size-8" />
       <span class="text-sm">此目录为空</span>
     </div>
 
     <!-- File list -->
-    <div v-else-if="data" class="flex-1 overflow-y-auto">
+    <div v-else-if="treeData !== null" class="flex-1 overflow-y-auto">
       <button
-        v-for="entry in data.entries"
+        v-for="entry in entries"
         :key="entry.path"
         class="w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-elevated/50 cursor-pointer"
         :class="isFileSelected(entry) ? 'bg-elevated/80 border-l-2 border-primary' : 'border-l-2 border-transparent'"
-        @click="entry.type === 'directory' ? navigateTo(entry.path) : selectFile(entry)"
+        @click="entry.type === 'dir' ? navigateTo(entry.path) : selectFile(entry)"
       >
-        <UIcon :name="getFileIcon(entry)" class="size-4 shrink-0" :class="entry.type === 'directory' ? 'text-primary' : 'text-muted'" />
+        <UIcon :name="getFileIcon(entry)" class="size-4 shrink-0" :class="entry.type === 'dir' ? 'text-primary' : 'text-muted'" />
         <span class="flex-1 text-left truncate text-highlighted">{{ entry.name }}</span>
         <span v-if="entry.type === 'file' && entry.size != null" class="text-xs text-muted whitespace-nowrap">
           {{ formatFileSize(entry.size) }}

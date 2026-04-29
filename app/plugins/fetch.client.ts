@@ -1,8 +1,18 @@
 export default defineNuxtPlugin(() => {
   const nuxt = useNuxtApp()
 
+  // Catch 401s from Nuxt error handling (useFetch errors during rendering)
   nuxt.hook('app:error' as any, (error: any) => {
     if (error?.statusCode === 401) {
+      handle401()
+    }
+  })
+
+  // Catch 401s from unhandled $fetch promise rejections
+  window.addEventListener('unhandledrejection', (event) => {
+    const error = event.reason
+    if (error?.statusCode === 401) {
+      event.preventDefault()
       handle401()
     }
   })

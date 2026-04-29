@@ -8,10 +8,10 @@ interface FileContentResponse {
   size: number
   content: string | null
   previewable: boolean
-  downloadUrl?: string
 }
 
 const props = defineProps<{
+  chatId: string
   filePath: string | null
   embedded?: boolean
 }>()
@@ -30,7 +30,7 @@ async function fetchData() {
   pending.value = true
   error.value = null
   try {
-    data.value = await $fetch<FileContentResponse>('/api/v1/files/content', {
+    data.value = await $fetch<FileContentResponse>(`/api/v1/agent/chats/${props.chatId}/files/content`, {
       query: { path: props.filePath }
     })
   } catch (e: unknown) {
@@ -181,7 +181,7 @@ const isDiff = computed(() => {
 
 const downloadUrl = computed(() => {
   if (!props.filePath) return ''
-  return `/api/v1/files/download?path=${encodeURIComponent(props.filePath)}`
+  return `/api/v1/agent/chats/${props.chatId}/files/download?path=${encodeURIComponent(props.filePath)}`
 })
 
 // --- Diff/Patch parsing ---

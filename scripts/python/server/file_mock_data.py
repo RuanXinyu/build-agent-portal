@@ -5,77 +5,7 @@ Provides a simulated project directory tree with various file types
 for testing the file browser panel.
 """
 
-# Language detection based on file extension
-EXTENSION_LANGUAGE_MAP = {
-    ".ts": "typescript",
-    ".tsx": "typescript",
-    ".js": "javascript",
-    ".jsx": "javascript",
-    ".vue": "vue",
-    ".py": "python",
-    ".css": "css",
-    ".html": "html",
-    ".json": "json",
-    ".md": "markdown",
-    ".yaml": "yaml",
-    ".yml": "yaml",
-    ".toml": "toml",
-    ".sql": "sql",
-    ".sh": "bash",
-    ".go": "go",
-    ".rs": "rust",
-    ".java": "java",
-    ".c": "c",
-    ".cpp": "cpp",
-    ".rb": "ruby",
-    ".php": "php",
-    ".swift": "swift",
-    ".kt": "kotlin",
-    ".graphql": "graphql",
-    ".xml": "xml",
-    ".dockerfile": "dockerfile",
-    ".diff": "diff",
-    ".patch": "diff",
-}
-
-# Extensions that can be previewed as text
-PREVIEWABLE_EXTENSIONS = set(EXTENSION_LANGUAGE_MAP.keys()) | {
-    ".txt", ".env", ".gitignore", ".eslintrc", ".prettierrc",
-    ".editorconfig", ".conf", ".cfg", ".ini", ".log", ".csv",
-}
-
-# Binary/non-previewable extensions
-BINARY_EXTENSIONS = {
-    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp",
-    ".sqlite", ".db", ".woff", ".woff2", ".ttf", ".eot",
-    ".zip", ".tar", ".gz", ".rar", ".7z",
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx",
-    ".mp3", ".mp4", ".wav", ".avi", ".mov",
-    ".exe", ".dll", ".so", ".dylib",
-    ".wasm", ".class", ".pyc", ".o",
-}
-
-
-def _get_language(filename):
-    """Detect language from filename."""
-    if filename == "Dockerfile":
-        return "dockerfile"
-    if filename == "Makefile":
-        return "makefile"
-    for ext, lang in EXTENSION_LANGUAGE_MAP.items():
-        if filename.endswith(ext):
-            return lang
-    return None
-
-
-def _is_previewable(filename):
-    """Check if a file can be previewed as text."""
-    if filename in ("Dockerfile", "Makefile", ".gitignore", ".env"):
-        return True
-    for ext in PREVIEWABLE_EXTENSIONS:
-        if filename.endswith(ext):
-            return True
-    return False
+import base64
 
 
 # Mock project directory tree
@@ -84,25 +14,25 @@ def _is_previewable(filename):
 # For files: content_or_children = file content string
 # For dirs: content_or_children = list of child entries
 MOCK_FILE_TREE = {
-    "~": [
+    "root": [
         ("src", "dir", {
-            "~src": [
+            "src": [
                 ("components", "dir", {
-                    "~src/components": [
+                    "src/components": [
                         ("App.vue", "file", 890, '<template>\n  <div id="app">\n    <Header />\n    <RouterView />\n    <Footer />\n  </div>\n</template>\n\n<script setup lang="ts">\nimport Header from "./Header.vue"\nimport Footer from "./Footer.vue"\n</script>\n\n<style scoped>\n#app {\n  display: flex;\n  flex-direction: column;\n  min-height: 100vh;\n}\n</style>'),
                         ("Header.vue", "file", 654, '<template>\n  <header class="header">\n    <nav class="nav">\n      <RouterLink to="/" class="logo">MyApp</RouterLink>\n      <div class="nav-links">\n        <RouterLink to="/dashboard">Dashboard</RouterLink>\n        <RouterLink to="/settings">Settings</RouterLink>\n      </div>\n    </nav>\n  </header>\n</template>'),
                         ("Footer.vue", "file", 320, '<template>\n  <footer class="footer">\n    <p>&copy; 2026 MyApp. All rights reserved.</p>\n  </footer>\n</template>'),
                     ]
                 }),
                 ("utils", "dir", {
-                    "~src/utils": [
+                    "src/utils": [
                         ("auth.ts", "file", 1234, 'import { createHash, randomBytes } from "crypto"\nimport jwt from "jsonwebtoken"\n\nconst SECRET = process.env.JWT_SECRET || "dev-secret"\nconst TOKEN_EXPIRY = "7d"\n\nexport interface TokenPayload {\n  userId: string\n  email: string\n  role: "admin" | "user"\n}\n\nexport function hashPassword(password: string): string {\n  const salt = randomBytes(16).toString("hex")\n  const hash = createHash("sha256")\n    .update(password + salt)\n    .digest("hex")\n  return `${salt}:${hash}`\n}\n\nexport function verifyPassword(password: string, stored: string): boolean {\n  const [salt, hash] = stored.split(":")\n  const verify = createHash("sha256")\n    .update(password + salt)\n    .digest("hex")\n  return verify === hash\n}\n\nexport function generateToken(payload: TokenPayload): string {\n  return jwt.sign(payload, SECRET, { expiresIn: TOKEN_EXPIRY })\n}\n\nexport function validateToken(token: string): TokenPayload {\n  return jwt.verify(token, SECRET) as TokenPayload\n}\n'),
                         ("config.ts", "file", 567, 'export const config = {\n  apiBaseUrl: process.env.API_URL || "http://localhost:3000",\n  wsUrl: process.env.WS_URL || "ws://localhost:3000",\n  debug: process.env.NODE_ENV === "development",\n  version: "1.0.0",\n} as const\n\nexport type Config = typeof config\n'),
                         ("logger.ts", "file", 445, 'type LogLevel = "debug" | "info" | "warn" | "error"\n\nfunction log(level: LogLevel, message: string, data?: unknown) {\n  const timestamp = new Date().toISOString()\n  const prefix = `[${timestamp}] [${level.toUpperCase()}]`\n  if (data) {\n    console[level](prefix, message, data)\n  } else {\n    console[level](prefix, message)\n  }\n}\n\nexport const logger = {\n  debug: (msg: string, data?: unknown) => log("debug", msg, data),\n  info: (msg: string, data?: unknown) => log("info", msg, data),\n  warn: (msg: string, data?: unknown) => log("warn", msg, data),\n  error: (msg: string, data?: unknown) => log("error", msg, data),\n}\n'),
                     ]
                 }),
                 ("pages", "dir", {
-                    "~src/pages": [
+                    "src/pages": [
                         ("index.vue", "file", 312, '<template>\n  <div class="home">\n    <h1>Welcome to MyApp</h1>\n    <p>Get started by exploring the dashboard.</p>\n    <RouterLink to="/dashboard" class="btn">Go to Dashboard</RouterLink>\n  </div>\n</template>'),
                         ("dashboard.vue", "file", 1024, '<template>\n  <div class="dashboard">\n    <h1>Dashboard</h1>\n    <div class="stats-grid">\n      <div class="stat-card">\n        <h3>Total Users</h3>\n        <p class="stat-value">1,234</p>\n      </div>\n      <div class="stat-card">\n        <h3>Revenue</h3>\n        <p class="stat-value">$45,678</p>\n      </div>\n    </div>\n  </div>\n</template>'),
                     ]
@@ -112,33 +42,33 @@ MOCK_FILE_TREE = {
             ]
         }),
         ("server", "dir", {
-            "~server": [
+            "server": [
                 ("api", "dir", {
-                    "~server/api": [
+                    "server/api": [
                         ("index.ts", "file", 432, 'import { H3Event } from "h3"\nimport { z } from "zod"\n\nconst QuerySchema = z.object({\n  page: z.coerce.number().default(1),\n  limit: z.coerce.number().default(20),\n})\n\nexport default defineEventHandler(async (event: H3Event) => {\n  const query = await getValidatedQuery(event, QuerySchema.parse)\n  return { status: "ok", data: [] }\n})\n'),
                     ]
                 }),
                 ("db", "dir", {
-                    "~server/db": [
+                    "server/db": [
                         ("schema.ts", "file", 512, 'import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core"\n\nexport const users = sqliteTable("users", {\n  id: text("id").primaryKey(),\n  email: text("email").notNull().unique(),\n  name: text("name").notNull(),\n  avatar: text("avatar"),\n  createdAt: integer("created_at").notNull(),\n})\n'),
                     ]
                 }),
             ]
         }),
         ("tests", "dir", {
-            "~tests": [
+            "tests": [
                 ("auth.test.ts", "file", 890, 'import { describe, it, expect } from "vitest"\nimport { hashPassword, verifyPassword, generateToken, validateToken } from "../src/utils/auth"\n\ndescribe("auth utilities", () => {\n  it("should hash and verify password", () => {\n    const password = "test-password"\n    const hashed = hashPassword(password)\n    expect(verifyPassword(password, hashed)).toBe(true)\n    expect(verifyPassword("wrong-password", hashed)).toBe(false)\n  })\n\n  it("should generate and validate JWT token", () => {\n    const payload = { userId: "123", email: "test@test.com", role: "user" as const }\n    const token = generateToken(payload)\n    const decoded = validateToken(token)\n    expect(decoded.userId).toBe(payload.userId)\n  })\n})\n'),
                 ("config.test.ts", "file", 234, 'import { describe, it, expect } from "vitest"\nimport { config } from "../src/utils/config"\n\ndescribe("config", () => {\n  it("should have required fields", () => {\n    expect(config.apiBaseUrl).toBeDefined()\n    expect(config.version).toBe("1.0.0")\n  })\n})\n'),
             ]
         }),
         ("docs", "dir", {
-            "~docs": [
+            "docs": [
                 ("README.md", "file", 756, "# MyApp Documentation\n\n## Getting Started\n\n### Prerequisites\n\n- Node.js >= 18\n- npm >= 9\n\n### Installation\n\n```bash\ngit clone https://github.com/example/myapp.git\ncd myapp\nnpm install\n```\n\n### Development\n\n```bash\nnpm run dev\n```\n\nThe app will be available at `http://localhost:3000`.\n\n## Architecture\n\nThis project uses:\n- **Vue 3** with Composition API\n- **Vue Router** for routing\n- **TypeScript** for type safety\n\n## License\n\nMIT\n"),
                 ("API.md", "file", 445, "# API Reference\n\n## Authentication\n\nAll API endpoints require a valid JWT token in the `Authorization` header:\n\n```\nAuthorization: Bearer <token>\n```\n\n## Endpoints\n\n### GET /api/users\n\nList all users.\n\n**Response:**\n```json\n[\n  { \"id\": \"1\", \"name\": \"Alice\", \"email\": \"alice@example.com\" }\n]\n```\n"),
             ]
         }),
         ("assets", "dir", {
-            "~assets": [
+            "assets": [
                 ("logo.png", "file", 15360, None),
                 ("data.sqlite", "file", 204800, None),
                 ("styles.css", "file", 289, "/* Global styles */\n:root {\n  --primary: #3b82f6;\n  --bg: #ffffff;\n  --text: #1f2937;\n}\n\nbody {\n  font-family: system-ui, sans-serif;\n  color: var(--text);\n  background: var(--bg);\n}\n\n.btn {\n  display: inline-flex;\n  padding: 8px 16px;\n  border-radius: 6px;\n  background: var(--primary);\n  color: white;\n  text-decoration: none;\n}\n"),
@@ -154,24 +84,27 @@ MOCK_FILE_TREE = {
 
 
 def _resolve_dir(path):
-    """Resolve a path like '~/src/utils' to the directory entry list, or None."""
-    if path == "~":
-        return MOCK_FILE_TREE["~"]
+    """Resolve a path like '/src/utils' to the directory entry list, or None.
 
-    parts = path.replace("~/", "", 1).split("/")
-    current_key = "~"
-    current_list = MOCK_FILE_TREE["~"]
+    Root path ('/' or '') returns the root entries.
+    """
+    key = path.strip("/")
+
+    if not key:
+        return MOCK_FILE_TREE["root"]
+
+    parts = key.split("/")
+    current_key = ""
+    current_list = MOCK_FILE_TREE["root"]
 
     for part in parts:
         found = False
         for entry in current_list:
             if entry[0] == part and entry[1] == "dir":
-                # Key format: ~src, ~src/components, ~src/components/...
-                # First part is concatenated directly, subsequent parts use /
-                if current_key == "~":
-                    current_key = f"~{part}"
-                else:
+                if current_key:
                     current_key = f"{current_key}/{part}"
+                else:
+                    current_key = part
                 current_list = entry[2][current_key]
                 found = True
                 break
@@ -182,97 +115,88 @@ def _resolve_dir(path):
 
 def _resolve_file(path):
     """Resolve a file path to (entry_tuple, parent_entries) or (None, None)."""
-    if path == "~":
+    if not path or path == "/":
         return None, None
 
-    parts = path.replace("~/", "", 1).split("/")
+    parts = path.strip("/").split("/")
     filename = parts[-1]
     dir_parts = parts[:-1]
 
-    # Navigate to parent directory
     if not dir_parts:
-        parent = MOCK_FILE_TREE["~"]
+        parent = MOCK_FILE_TREE["root"]
     else:
-        parent = _resolve_dir("~/" + "/".join(dir_parts))
+        parent = _resolve_dir("/" + "/".join(dir_parts))
         if parent is None:
             return None, None
 
-    # Find the file in parent
     for entry in parent:
         if entry[0] == filename and entry[1] == "file":
             return entry, parent
     return None, None
 
 
-def list_directory(path):
+def list_directory(path="/", recursive=True, depth=2):
     """
     List directory contents at the given path.
 
-    Returns a list of entry dicts or None if path not found.
+    Returns a dict with nested 'files' array or None if path not found.
+    Each entry: { "filename": str, "type": "dir"|"file", "size"?: int, "files"?: [...] }
     """
     entries_raw = _resolve_dir(path)
     if entries_raw is None:
         return None
 
-    result = []
-    for entry in entries_raw:
-        name, entry_type = entry[0], entry[1]
-        if path == "~":
-            entry_path = f"~/{name}"
-        else:
-            entry_path = f"{path}/{name}"
+    def build_tree(entries, current_depth):
+        result = []
+        sorted_entries = sorted(entries, key=lambda e: (e[1] != "dir", e[0].lower()))
+        for entry in sorted_entries:
+            name, entry_type = entry[0], entry[1]
+            if entry_type == "dir":
+                item = {
+                    "filename": name,
+                    "type": "dir",
+                }
+                if recursive and current_depth < depth:
+                    child_dict = entry[2]
+                    child_entries = list(child_dict.values())[0]
+                    item["files"] = build_tree(child_entries, current_depth + 1)
+                else:
+                    item["files"] = []
+                result.append(item)
+            else:
+                size = entry[2]
+                result.append({
+                    "filename": name,
+                    "type": "file",
+                    "size": size,
+                })
+        return result
 
-        if entry_type == "dir":
-            result.append({
-                "name": name,
-                "path": entry_path,
-                "type": "directory",
-            })
-        else:
-            size = entry[2]
-            result.append({
-                "name": name,
-                "path": entry_path,
-                "type": "file",
-                "size": size,
-                "language": _get_language(name),
-            })
-
-    # Sort: directories first, then files, both alphabetical
-    result.sort(key=lambda e: (e["type"] != "directory", e["name"].lower()))
-    return result
+    return {"files": build_tree(entries_raw, 0)}
 
 
 def get_file_content(path):
     """
     Get file content at the given path.
 
-    Returns a dict with file info, or None if not found.
+    Returns a dict with name, size, content (base64) or None if not found.
     """
     entry, _ = _resolve_file(path)
     if entry is None:
         return None
 
     name, _, size, content = entry
-    previewable = _is_previewable(name)
 
-    if previewable and content is not None:
-        return {
-            "name": name,
-            "language": _get_language(name),
-            "size": size,
-            "content": content,
-            "previewable": True,
-        }
+    if content is not None:
+        encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
     else:
-        return {
-            "name": name,
-            "language": _get_language(name),
-            "size": size,
-            "content": None,
-            "previewable": False,
-            "downloadUrl": f"/api/files/download?path={path}",
-        }
+        encoded = None
+
+    return {
+        "name": name,
+        "size": size,
+        "content": encoded,
+    }
 
 
 def file_exists(path):

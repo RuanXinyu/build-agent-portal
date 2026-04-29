@@ -21,6 +21,7 @@ interface ChatData {
 }
 
 const { data } = await useFetch<ChatData>(`/api/v1/agent/chats/${route.params.id}`)
+console.log(data.value)
 
 const isOwner = computed(() => data.value?.isOwner ?? false)
 
@@ -247,6 +248,7 @@ async function handleSubmit(e: Event) {
               <!-- File preview -->
               <div class="flex-1 min-h-0">
                 <FilePreview
+                  :chat-id="String(route.params.id)"
                   :file-path="maximizedFile"
                   :embedded="false"
                   @maximize="onMinimizePreview"
@@ -257,6 +259,7 @@ async function handleSubmit(e: Event) {
         </UContainer>
 
         <FileBrowserPanel
+          :chat-id="String(route.params.id)"
           v-model:open="panelOpen"
           :maximized-file="maximizedFile"
           @maximize="onFileMaximize"

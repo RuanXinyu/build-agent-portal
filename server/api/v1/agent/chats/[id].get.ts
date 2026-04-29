@@ -122,8 +122,8 @@ export default defineEventHandler(async (event) => {
   const isStream = query.stream === 'true'
   const afterTs = query.after_ts ? Number(query.after_ts) : undefined
 
-  const chats = await useInternalService<FlaskChat[]>(event, '/api/chats')
-  const chat = chats.find(c => c.id === id || c.chat_id === id)
+  const chats = await useInternalService<{ data: FlaskChat[] }>(event, '/buildagent/v1/agent/chats')
+  const chat = chats.data.find(c => c.id === id || c.chat_id === id)
 
   if (!chat) {
     throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
@@ -136,13 +136,14 @@ export default defineEventHandler(async (event) => {
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
-        let url = `/api/chats/${id}/stream`
+        let url = `/buildagent/v1/agent/chats/${id}/logs/stream`
         if (afterTs) {
           url += `?after_ts=${afterTs}`
         }
 
         const config = useRuntimeConfig()
         const response = await fetch(`${config.flaskApiUrl}${url}`, {
+          method: "POST",
           headers: {
             'X-Auth-Token': xAuthToken || ''
           }

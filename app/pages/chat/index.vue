@@ -28,16 +28,28 @@ async function createChat(prompt: string) {
   input.value = prompt
   loading.value = true
 
-  const result = await $fetch<{ chat_id: string; message_id: string }>('/api/v1/agent/chats', {
-    method: 'POST',
-    headers: { [headerName]: csrf },
-    body: {
-      prompt: prompt,
-    }
-  })
+  try {
+    const result = await $fetch<{ chat_id: string; message_id: string }>('/api/v1/agent/chats', {
+      method: 'POST',
+      headers: { [headerName]: csrf },
+      body: {
+        prompt: prompt,
+      }
+    })
 
-  refreshNuxtData('chats')
-  navigateTo(`/chat/${result.chat_id}`)
+    refreshNuxtData('chats')
+    navigateTo(`/chat/${result.chat_id}`)
+  } catch (error: any) {
+    loading.value = false
+    if (error?.statusCode !== 401) {
+      const toast = useToast()
+      toast.add({
+        description: error?.data?.message || error?.message || '创建会话失败',
+        icon: 'i-lucide-alert-circle',
+        color: 'error'
+      })
+    }
+  }
 }
 
 async function onSubmit() {

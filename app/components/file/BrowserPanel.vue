@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
+  chatId: string
   open: boolean
   maximizedFile: string | null
 }>()
@@ -11,7 +12,7 @@ const emit = defineEmits<{
 }>()
 
 // --- State ---
-const currentPath = ref('~')
+const currentPath = ref('/')
 const selectedFilePath = ref<string | null>(null)
 
 // --- Resizable panel ---
@@ -60,7 +61,7 @@ function onMouseUp() {
 // Reset state when panel opens
 watch(() => props.open, (newVal) => {
   if (newVal) {
-    currentPath.value = '~'
+    currentPath.value = '/'
     selectedFilePath.value = null
     panelWidth.value = DEFAULT_WIDTH
   }
@@ -114,6 +115,7 @@ function onMaximize() {
       <!-- File list section -->
       <div class="flex-1 overflow-hidden">
         <FileList
+          :chat-id="chatId"
           :current-path="currentPath"
           :selected-file-path="selectedFilePath"
           @navigate="onNavigate"
@@ -128,6 +130,7 @@ function onMaximize() {
         style="height: 40%"
       >
         <FilePreview
+          :chat-id="chatId"
           :file-path="selectedFilePath"
           :embedded="true"
           @maximize="onMaximize"

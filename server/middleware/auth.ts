@@ -1,8 +1,8 @@
 export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
 
-  // Only apply to /api/ routes, skip auth routes
-  if (!url.pathname.startsWith('/api/') || url.pathname.startsWith('/api/auth/')) {
+  // Only apply to /api/v1/ routes (skip /api/auth/, /api/_nuxt internal routes)
+  if (!url.pathname.startsWith('/api/v1/')) {
     return
   }
 

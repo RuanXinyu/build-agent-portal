@@ -24,6 +24,7 @@ export function getSSOAuthUrl(state: string): string {
     response_type: 'code',
     client_id: config.ssoClientId,
     redirect_uri: config.ssoRedirectUrl,
+    scope: "base.profile",
     state
   })
   console.log('[SSO] Generated OAuth URL, state:', state)
@@ -76,7 +77,7 @@ export async function fetchSSOUserInfo(accessToken: string): Promise<SSOUser> {
         scope: 'base.profile'
       }
     })
-    console.log('[SSO] User info fetched:', result.username || result.id)
+    console.log('[SSO] User info fetched:', result)
     return result
   } catch (error) {
     console.error('[SSO] User info fetch failed:', error)

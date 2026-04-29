@@ -18,8 +18,13 @@ onNuxtReady(async () => {
   // No pre-fetching — each chat detail page loads its own data on demand
 })
 
-watch(loggedIn, () => {
-  refreshChats()
+watch(loggedIn, (isLoggedIn) => {
+  if (!isLoggedIn) {
+    clearNuxtData('chats')
+    navigateTo('/auth/sso', { external: true })
+  } else {
+    refreshChats()
+  }
   open.value = false
 })
 

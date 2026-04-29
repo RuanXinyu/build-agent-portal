@@ -1,12 +1,18 @@
 export default defineEventHandler(async (event) => {
-  const res = await useInternalService<{ id: string, chat_id: string, title: string | null, createdAt: string }[]>(
+  const res = await useInternalService<{ 
+    data: Array<{
+      id: string
+      chat_id: string
+      title: string | null
+      created_at: string
+    }>
+  }>(
     event,
-    '/api/chats'
+    '/buildagent/v1/agent/chats?page=1'
   )
 
-  return res.map(chat => ({
+  return res.data.map(chat => ({
     ...chat,
-    userId: 'mock-user',
-    createdAt: new Date(chat.createdAt)
+    createdAt: new Date(chat.created_at)
   }))
 })

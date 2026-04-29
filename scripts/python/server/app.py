@@ -51,13 +51,15 @@ def validate_xauth_token():
     return None
 
 
-@app.route("/api/chats", methods=["GET"])
+@app.route("/buildagent/v1/agent/chats", methods=["GET"])
 def list_chats():
     """会话列表"""
-    return jsonify(get_all_chats())
+    return jsonify({
+        "data": get_all_chats()
+    })
 
 
-@app.route("/api/chats", methods=["POST"])
+@app.route("/buildagent/v1/agent/chats", methods=["POST"])
 def upsert_chat():
     """统一创建/继续对话"""
     body = request.get_json(force=True)
@@ -69,19 +71,42 @@ def upsert_chat():
         return jsonify({"error": "Chat not found"}), 404
 
     return jsonify({
-        "chat_id": chat["id"],
-        "message_id": message_id
+        "data": {
+            "chat_id": chat["id"],
+            "message_id": message_id
+        }
     })
 
 
-@app.route("/api/chats/<chat_id>/stream", methods=["GET"])
+@app.route("/buildagent/v1/agent/chats/<chat_id>/logs/stream", methods=["POST"])
 def stream_chat(chat_id):
     """返回 opencode NDJSON 格式流（支持 after_ts 增量过滤）"""
+    after_ts = request.args.get("after_ts", type=int)
+
+    if chat_id == "mock-1":
+        def generate_mock():
+            jsonl_path = os.path.join(os.path.dirname(__file__), "opencode.jsonl")
+            if not os.path.exists(jsonl_path):
+                return
+            with open(jsonl_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if after_ts is not None:
+                        try:
+                            data = json.loads(line)
+                            if data.get("timestamp", 0) <= after_ts:
+                                continue
+                        except Exception:
+                            pass
+                    yield line + "\n"
+                    time.sleep(random.randint(50, 100) / 1000)
+        return Response(generate_mock(), mimetype="text/x-ndjson")
+
     chat, logs = get_chat(chat_id)
     if not chat:
         return jsonify({"error": "Chat not found"}), 404
-
-    after_ts = request.args.get("after_ts", type=int)
 
     # 过滤日志
     if after_ts is not None:
@@ -103,26 +128,28 @@ def _validate_path(path):
     return ".." not in parts
 
 
-@app.route("/api/files", methods=["GET"])
+@app.route("/buildagent/v1/agent/chats/<chat_id>/workspace/output/files", methods=["GET"])
 def list_files():
-    """List directory contents."""
-    path = request.args.get("path", "~")
+    """List directory contents as nested tree."""
+    path = request.args.get("filepath", "/")
+    recursive = request.args.get("recursive", "true").lower() == "true"
+    depth = int(request.args.get("depth", "2"))
     if not _validate_path(path):
         return jsonify({"error": "Invalid path"}), 400
 
-    entries = list_directory(path)
-    if entries is None:
+    result = list_directory(path, recursive=recursive, depth=depth)
+    if result is None:
         return jsonify({"error": "Directory not found"}), 404
 
-    return jsonify({"entries": entries})
+    return jsonify({"data": result})
 
 
-@app.route("/api/files/content", methods=["GET"])
+@app.route("/buildagent/v1/agent/chats/<chat_id>/workspace/output/files/content", methods=["GET"])
 def get_file_content_endpoint():
     """Get file content and metadata."""
-    path = request.args.get("path")
+    path = request.args.get("filepath")
     if not path:
-        return jsonify({"error": "Missing required parameter: path"}), 400
+        return jsonify({"error": "Missing required parameter: filepath"}), 400
     if not _validate_path(path):
         return jsonify({"error": "Invalid path"}), 400
 
@@ -130,15 +157,15 @@ def get_file_content_endpoint():
     if content is None:
         return jsonify({"error": "File not found"}), 404
 
-    return jsonify(content)
+    return jsonify({"data": content, "error": ""})
 
 
-@app.route("/api/files/download", methods=["GET"])
+@app.route("/buildagent/v1/agent/chats/<chat_id>/workspace/output/files/download", methods=["GET"])
 def download_file():
     """Download a file as binary attachment."""
-    path = request.args.get("path")
+    path = request.args.get("filepath")
     if not path:
-        return jsonify({"error": "Missing required parameter: path"}), 400
+        return jsonify({"error": "Missing required parameter: filepath"}), 400
     if not _validate_path(path):
         return jsonify({"error": "Invalid path"}), 400
 
@@ -148,11 +175,10 @@ def download_file():
     filename = os.path.basename(path)
     file_info = get_file_content(path)
 
-    if file_info.get("previewable") and file_info.get("content") is not None:
-        # Text files: serve actual content
-        buffer = BytesIO(file_info["content"].encode("utf-8"))
+    if file_info.get("content") is not None:
+        import base64
+        buffer = BytesIO(base64.b64decode(file_info["content"]))
     else:
-        # Binary/mock files: generate placeholder content
         buffer = BytesIO(f"[Mock binary content for {filename}]".encode("utf-8"))
 
     return send_file(

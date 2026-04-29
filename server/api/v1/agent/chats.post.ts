@@ -7,15 +7,18 @@ export default defineEventHandler(async (event) => {
   }).parse)
 
   const result = await useInternalService<{
-    chat_id: string
-    message_id: string
-  }>(event, '/api/chats', {
+    data: {
+      chat_id: string
+      message_id: string
+    }
+  }>(event, '/buildagent/v1/agent/chats', {
     method: 'POST',
     body: {
-      chat_id: body.chat_id || '',
+      app_name: "BuildAgentPortal",
+      chat_id: body.chat_id || null,
       prompt: body.prompt
     }
   })
 
-  return result
+  return result.data
 })

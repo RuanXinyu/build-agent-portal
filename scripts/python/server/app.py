@@ -129,7 +129,7 @@ def _validate_path(path):
 
 
 @app.route("/buildagent/v1/agent/chats/<chat_id>/workspace/output/files", methods=["GET"])
-def list_files():
+def list_files(chat_id):
     """List directory contents as nested tree."""
     path = request.args.get("filepath", "/")
     recursive = request.args.get("recursive", "true").lower() == "true"
@@ -145,7 +145,7 @@ def list_files():
 
 
 @app.route("/buildagent/v1/agent/chats/<chat_id>/workspace/output/files/content", methods=["GET"])
-def get_file_content_endpoint():
+def get_file_content_endpoint(chat_id):
     """Get file content and metadata."""
     path = request.args.get("filepath")
     if not path:
@@ -161,7 +161,7 @@ def get_file_content_endpoint():
 
 
 @app.route("/buildagent/v1/agent/chats/<chat_id>/workspace/output/files/download", methods=["GET"])
-def download_file():
+def download_file(chat_id):
     """Download a file as binary attachment."""
     path = request.args.get("filepath")
     if not path:

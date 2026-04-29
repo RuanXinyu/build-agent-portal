@@ -178,6 +178,7 @@ export default defineEventHandler(async (event) => {
             buffer = lines.pop() || ''
 
             for (const line of lines) {
+              console.log(line)
               const trimmed = line.trim()
               if (!trimmed) continue
 
@@ -250,13 +251,15 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
 
   const response = await fetch(
-    `${config.flaskApiUrl}/api/chats/${id}/stream`,
+    `${config.flaskApiUrl}/buildagent/v1/agent/chats/${id}/logs/stream`,
     {
+      method: "POST",
       headers: {
         'X-Auth-Token': xAuthToken || ''
       }
     }
   )
+  console.log("response: ", response)
   if (!response.ok) {
     throw createError({
       statusCode: response.status,

@@ -32,11 +32,24 @@ async function fetchTree() {
   pending.value = true
   error.value = null
   try {
-    const result = await $fetch<{ files: TreeEntry[] }>(`/api/v1/agent/chats/${props.chatId}/files`, {
+    const result = await $fetch(`/api/v1/agent/chats/${props.chatId}/files`, {
       query: { filepath: '/' }
-    })
-    treeData.value = result.files
+    }) as any
+    console.log('[FileList] API raw result:', JSON.stringify(result).slice(0, 500))
+    // Handle both { files: [...] } and { data: { files: [...] } } shapes
+    const files = Array.isArray(result?.files)
+      ? result.files
+      : Array.isArray(result?.data?.files)
+        ? result.data.files
+        : null
+    if (!files) {
+      console.error('[FileList] Unexpected response shape:', Object.keys(result || {}))
+      throw new Error('Invalid response from file API')
+    }
+    treeData.value = files
+    console.log('[FileList] treeData set:', treeData.value.length, 'entries')
   } catch (e: unknown) {
+    console.error('[FileList] fetch error:', e)
     error.value = e instanceof Error ? e : new Error(String(e))
   } finally {
     pending.value = false

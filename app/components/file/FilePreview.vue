@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { VueMonacoEditor, VueMonacoDiffEditor } from '@guolao/vue-monaco-editor'
-import parseDiff from 'parse-diff'
+import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
+import { Diff2Html } from 'diff2html'
 
 interface FileContentResponse {
   filepath: string
@@ -189,59 +189,9 @@ const downloadUrl = computed(() => {
 
 // --- Diff/Patch parsing ---
 
-function parsePatchContent(content: string): { original: string, modified: string, language: string } {
-  const files = parseDiff(content)
-  if (!files.length) {
-    return { original: '', modified: '', language: 'plaintext' }
-  }
-
-  const originalLines: string[] = []
-  const modifiedLines: string[] = []
-
-  for (const file of files) {
-    for (const chunk of file.chunks) {
-      for (const change of chunk.changes) {
-        const lineContent = change.content.slice(1) // strip prefix char (+/-/space)
-        if (change.type === 'normal') {
-          originalLines.push(lineContent)
-          modifiedLines.push(lineContent)
-        } else if (change.type === 'del') {
-          originalLines.push(lineContent)
-        } else if (change.type === 'add') {
-          modifiedLines.push(lineContent)
-        }
-      }
-    }
-  }
-
-  // Detect language from the patched file name
-  const fileName = files[0]?.to || files[0]?.from || ''
-  const ext = fileName.includes('.') ? '.' + fileName.split('.').pop() : ''
-  const langMap: Record<string, string> = {
-    '.ts': 'typescript', '.tsx': 'typescript',
-    '.js': 'javascript', '.jsx': 'javascript',
-    '.vue': 'html', '.py': 'python', '.css': 'css',
-    '.html': 'html', '.json': 'json', '.yaml': 'yaml',
-    '.yml': 'yaml', '.go': 'go', '.rs': 'rust',
-    '.java': 'java', '.c': 'c', '.cpp': 'cpp',
-    '.rb': 'ruby', '.php': 'php', '.swift': 'swift',
-    '.kt': 'kotlin', '.sql': 'sql', '.sh': 'shell',
-    '.md': 'markdown'
-  }
-  const language = langMap[ext.toLowerCase()] || 'plaintext'
-
-  return {
-    original: originalLines.join('\n'),
-    modified: modifiedLines.join('\n'),
-    language
-  }
-}
-
-const diffData = computed(() => {
-  if (!isDiff.value || !data.value?.content) {
-    return { original: '', modified: '', language: 'plaintext' }
-  }
-  return parsePatchContent(data.value.content)
+const parsedFiles = computed(() => {
+  if (!isDiff.value || !data.value?.content) return []
+  return Diff2Html.parse(data.value.content)
 })
 
 const diffMode = ref<'side-by-side' | 'inline'>('side-by-side')
@@ -356,23 +306,15 @@ function toggleMaximize() {
         </div>
 
         <!-- Diff/Patch rendering -->
-        <div v-else-if="isDiff" class="flex-1 overflow-hidden">
-          <VueMonacoDiffEditor
-            :original="diffData.original"
-            :modified="diffData.modified"
-            :language="diffData.language"
-            :options="{
-              readOnly: true,
-              renderSideBySide: diffMode === 'side-by-side',
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              lineNumbers: 'on',
-              renderLineHighlight: 'none',
-              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 }
-            }"
-            :theme="($colorMode?.value === 'dark' ? 'vs-dark' : 'vs')"
-            class="h-full"
-          />
+        <div v-else-if="isDiff" class="flex-1 overflow-y-auto">
+          <div class="flex flex-col gap-4 p-4">
+            <DiffFileCard
+              v-for="(file, index) in parsedFiles"
+              :key="index"
+              :file-diff="file"
+              :diff-mode="diffMode"
+            />
+          </div>
         </div>
 
         <!-- Code / plain text rendering with Monaco Editor -->

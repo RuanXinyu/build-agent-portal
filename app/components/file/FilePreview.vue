@@ -308,7 +308,7 @@ function toggleMaximize() {
         <!-- Diff/Patch rendering -->
         <div v-else-if="isDiff" class="flex-1 overflow-y-auto">
           <div v-if="parsedFiles.length" class="flex flex-col gap-4 p-4">
-            <DiffFileCard
+            <FileDiffFileCard
               v-for="file in parsedFiles"
               :key="file.oldName + ' -> ' + file.newName"
               :file-diff="file"

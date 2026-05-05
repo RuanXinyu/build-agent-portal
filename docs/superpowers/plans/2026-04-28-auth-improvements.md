@@ -42,7 +42,7 @@ In `nuxt.config.ts`, add `staticAuthToken` to the `runtimeConfig` block (after `
 
 ```typescript
 runtimeConfig: {
-    flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001',
+    backendApiUrl: process.env.BACKEND_API_URL || 'http://localhost:5001',
     ssoClientId: process.env.NUXT_SSO_CLIENT_ID || '',
     ssoClientSecret: process.env.NUXT_SSO_CLIENT_SECRET || '',
     ssoAuthorizeUrl: process.env.NUXT_SSO_AUTHORIZE_URL || '',
@@ -117,7 +117,7 @@ export async function useInternalService<T>(
   // Static token mode: bypass SSO entirely
   if (staticToken) {
     console.log('[SSO] Static token mode:', path)
-    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+    return await ofetch<T>(`${config.backendApiUrl}${path}`, {
       method: options.method || 'GET',
       params: options.params,
       body: options.body,
@@ -140,7 +140,7 @@ export async function useInternalService<T>(
   }
 
   try {
-    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+    return await ofetch<T>(`${config.backendApiUrl}${path}`, {
       method: options.method || 'GET',
       params: options.params,
       body: options.body,
@@ -168,7 +168,7 @@ export async function useInternalService<T>(
     console.log('[SSO] Token refreshed, retrying request:', path)
 
     // Retry the request with the new token
-    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+    return await ofetch<T>(`${config.backendApiUrl}${path}`, {
       method: options.method || 'GET',
       params: options.params,
       body: options.body,
@@ -412,7 +412,7 @@ In `nuxt.config.ts`, add a `public` block inside `runtimeConfig` (we only expose
 
 ```typescript
   runtimeConfig: {
-    flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001',
+    backendApiUrl: process.env.BACKEND_API_URL || 'http://localhost:5001',
     ssoClientId: process.env.NUXT_SSO_CLIENT_ID || '',
     ssoClientSecret: process.env.NUXT_SSO_CLIENT_SECRET || '',
     ssoAuthorizeUrl: process.env.NUXT_SSO_AUTHORIZE_URL || '',

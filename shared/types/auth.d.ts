@@ -6,6 +6,9 @@ declare module '#auth-utils' {
     email: string
     avatar: string
     username: string
+    uuid?: string
+    globalUserID?: string
+    tenantId?: string
     provider: 'sso'
     providerId: string
   }

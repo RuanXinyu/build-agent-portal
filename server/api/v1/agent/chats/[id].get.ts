@@ -30,7 +30,8 @@ interface FlaskChat {
   id: string
   chat_id: string
   title: string | null
-  createdAt: string
+  createdAt?: string
+  created_at?: string
 }
 
 function toEpochMs(timestamp: unknown): number {
@@ -128,11 +129,16 @@ export default defineEventHandler(async (event) => {
   const isStream = query.stream === 'true'
   const afterTs = query.after_ts ? Number(query.after_ts) : undefined
 
-  const chats = await useInternalService<{ data: FlaskChat[] }>(event, '/buildagent/v1/agent/chats')
-  const chat = chats.data.find(c => c.id === id || c.chat_id === id)
-
-  if (!chat) {
-    throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
+  let chat: FlaskChat
+  try {
+    const chatDetail = await useInternalService<{ data: FlaskChat }>(event, `/buildagent/v1/agent/chats/${id}`)
+    chat = chatDetail.data
+  }
+  catch (error: any) {
+    if (error?.statusCode === 404) {
+      throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
+    }
+    throw error
   }
 
   // JSON initial load mode
@@ -153,7 +159,7 @@ export default defineEventHandler(async (event) => {
         }
 
         const config = useRuntimeConfig()
-        const response = await fetch(`${config.flaskApiUrl}${url}`, {
+        const response = await fetch(`${config.backendApiUrl}${url}`, {
           method: "POST",
           headers: {
             'X-Auth-Token': xAuthToken || ''
@@ -257,7 +263,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const response = await fetch(
-    `${config.flaskApiUrl}/buildagent/v1/agent/chats/${id}/logs/stream`,
+    `${config.backendApiUrl}/buildagent/v1/agent/chats/${id}/logs/stream`,
     {
       method: "POST",
       headers: {
@@ -307,9 +313,10 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    id: chat.id,
+    id,
+    chat_id: chat.chat_id,
     title: chat.title,
-    createdAt: chat.createdAt,
+    createdAt: chat.createdAt || chat.created_at || new Date(0).toISOString(),
     messages,
     lastTimestamp,
     isOwner: true

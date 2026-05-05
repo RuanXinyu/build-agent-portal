@@ -29,7 +29,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-07-11',
 
   runtimeConfig: {
-    flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001',
+    backendApiUrl: process.env.BACKEND_API_URL || 'http://localhost:5001',
     ssoClientId: process.env.NUXT_SSO_CLIENT_ID || '',
     ssoClientSecret: process.env.NUXT_SSO_CLIENT_SECRET || '',
     ssoAuthorizeUrl: process.env.NUXT_SSO_AUTHORIZE_URL || '',
@@ -38,6 +38,8 @@ export default defineNuxtConfig({
     ssoRedirectUrl: process.env.NUXT_SSO_REDIRECT_URL || '',
     tokenExchangeUrl: process.env.NUXT_TOKEN_EXCHANGE_URL || '',
     ssoCookieName: process.env.NUXT_SSO_COOKIE_NAME || 'sso_token',
+    ssoAccessKey: process.env.NUXT_SSO_AK || '',
+    ssoSecretKey: process.env.NUXT_SSO_SK || '',
     staticAuthToken: process.env.NUXT_STATIC_AUTH_TOKEN || '',
     public: {
       hasStaticAuthToken: !!process.env.NUXT_STATIC_AUTH_TOKEN

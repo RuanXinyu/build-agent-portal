@@ -17,7 +17,7 @@
 | 创建 | `scripts/python/server/requirements.txt` | Python 依赖 |
 | 创建 | `scripts/python/server/mock_data.py` | Mock 数据和内存存储 |
 | 创建 | `scripts/python/server/app.py` | Flask 路由和 SSE 流 |
-| 修改 | `.env` | 添加 FLASK_API_URL |
+| 修改 | `.env` | 添加 BACKEND_API_URL |
 | 修改 | `nuxt.config.ts` | 添加 runtimeConfig |
 | 修改 | `server/db/schema.ts` | 删除 chats/messages 表定义 |
 | 修改 | `server/routes/auth/github.get.ts` | 移除 chats 表引用 |
@@ -365,12 +365,12 @@ git commit -m "feat: add Flask mock API server with 3 endpoints"
 - Modify: `.env`
 - Modify: `nuxt.config.ts`
 
-- [ ] **Step 1: 在 .env 中添加 FLASK_API_URL**
+- [ ] **Step 1: 在 .env 中添加 BACKEND_API_URL**
 
 在 `.env` 文件末尾追加：
 
 ```
-FLASK_API_URL=http://localhost:5001
+BACKEND_API_URL=http://localhost:5001
 ```
 
 - [ ] **Step 2: 在 nuxt.config.ts 中添加 runtimeConfig**
@@ -379,7 +379,7 @@ FLASK_API_URL=http://localhost:5001
 
 ```typescript
   runtimeConfig: {
-    flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001'
+    backendApiUrl: process.env.BACKEND_API_URL || 'http://localhost:5001'
   },
 ```
 
@@ -387,7 +387,7 @@ FLASK_API_URL=http://localhost:5001
 
 ```bash
 git add .env nuxt.config.ts
-git commit -m "feat: add FLASK_API_URL runtime config"
+git commit -m "feat: add BACKEND_API_URL runtime config"
 ```
 
 ---
@@ -506,7 +506,7 @@ git commit -m "refactor: remove chats table reference from GitHub OAuth handler"
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
   const res = await $fetch<{ id: string, chat_id: string, title: string | null, createdAt: string }[]>(
-    `${config.flaskApiUrl}/api/chats`
+    `${config.backendApiUrl}/api/chats`
   )
   return res.map(chat => ({
     ...chat,
@@ -565,7 +565,7 @@ export default defineEventHandler(async (event) => {
     chat_id: string
     title: string | null
     createdAt: string
-  }>(`${config.flaskApiUrl}/api/chats`, {
+  }>(`${config.backendApiUrl}/api/chats`, {
     method: 'POST',
     body: { message: body.prompt }
   })
@@ -618,7 +618,7 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
 
   // 先从会话列表中找到该会话的 title
-  const chats = await $fetch<FlaskChat[]>(`${config.flaskApiUrl}/api/chats`)
+  const chats = await $fetch<FlaskChat[]>(`${config.backendApiUrl}/api/chats`)
   const chat = chats.find(c => c.id === id || c.chat_id === id)
 
   if (!chat) {
@@ -628,7 +628,7 @@ export default defineEventHandler(async (event) => {
   // 调用 SSE 接口收集所有消息
   const messages: FlaskMessage[] = []
 
-  const response = await fetch(`${config.flaskApiUrl}/api/chats/${id}/stream`)
+  const response = await fetch(`${config.backendApiUrl}/api/chats/${id}/stream`)
   if (!response.ok) {
     throw createError({ statusCode: response.status, statusMessage: 'Chat not found' })
   }
@@ -726,7 +726,7 @@ export default defineEventHandler(async (event) => {
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       // 调用 Flask SSE 接口获取 mock 消息
-      const response = await fetch(`${config.flaskApiUrl}/api/chats/${id}/stream`)
+      const response = await fetch(`${config.backendApiUrl}/api/chats/${id}/stream`)
       if (!response.ok) {
         throw createError({ statusCode: response.status, statusMessage: 'Chat not found' })
       }

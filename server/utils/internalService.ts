@@ -24,7 +24,7 @@ export async function useInternalService<T>(
   // Static token mode: bypass SSO entirely
   if (staticToken) {
     console.log('[SSO] Static token mode:', path)
-    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+    return await ofetch<T>(`${config.backendApiUrl}${path}`, {
       method: options.method || 'GET',
       params: options.params,
       body: options.body,
@@ -47,7 +47,7 @@ export async function useInternalService<T>(
   }
 
   try {
-    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+    return await ofetch<T>(`${config.backendApiUrl}${path}`, {
       method: options.method || 'GET',
       params: options.params,
       body: options.body,
@@ -75,7 +75,7 @@ export async function useInternalService<T>(
     console.log('[SSO] Token refreshed, retrying request:', path)
 
     // Retry the request with the new token
-    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+    return await ofetch<T>(`${config.backendApiUrl}${path}`, {
       method: options.method || 'GET',
       params: options.params,
       body: options.body,

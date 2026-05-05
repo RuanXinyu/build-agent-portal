@@ -23,6 +23,7 @@ function getMessageText(message?: UIMessage) {
 
 interface ChatData {
   id: string
+  chat_id: string
   title: string | null
   createdAt: string
   messages: UIMessage[]
@@ -90,7 +91,7 @@ watch(maximizedFile, (path) => {
 
 const customTransport: ChatTransport<UIMessage> = {
   async sendMessages({
-    chatId,
+    chatId: _chatId,
     messageId,
     trigger,
     messages,
@@ -115,10 +116,11 @@ const customTransport: ChatTransport<UIMessage> = {
     }
 
     // 1. POST to trigger chat
-    const body: { prompt: string; chat_id?: string } = { prompt }
-    if (chatId) {
-      body.chat_id = chatId
+    const routeChatId = String(route.params.id || '')
+    if (!routeChatId) {
+      throw new Error('发送失败：无效的 chat_id')
     }
+    const body: { prompt: string; chat_id: string } = { prompt, chat_id: routeChatId }
 
     const result = await $fetch<{ chat_id?: string, chatId?: string, id?: string, message_id?: string }>('/api/v1/agent/chats', {
       method: 'POST',
@@ -282,13 +284,13 @@ async function handleSubmit(e: Event) {
             </template>
           </UChatPrompt>
 
-          <!-- Maximized file preview overlay -->
+          <!-- Maximized file preview overlay (covers message area only) -->
           <Transition name="fade">
             <div
               v-if="maximizedFile"
               ref="previewOverlay"
               tabindex="-1"
-              class="absolute inset-0 z-20 bg-default flex flex-col outline-none"
+              class="absolute inset-0 z-30 bg-default flex flex-col outline-none overscroll-contain rounded-lg border border-default shadow-lg overflow-hidden"
               @keydown="onPreviewKeydown"
             >
               <!-- File preview -->

@@ -6,6 +6,9 @@ interface SSOUser {
   email: string
   avatar: string
   username: string
+  uuid?: string
+  globalUserID?: string
+  tenantId?: string
 }
 
 interface SSOTokenResponse {
@@ -77,8 +80,12 @@ export async function fetchSSOUserInfo(accessToken: string): Promise<SSOUser> {
         scope: 'base.profile'
       }
     })
-    console.log('[SSO] User info fetched:', result)
-    return result
+    const normalizedResult: SSOUser = {
+      ...result,
+      globalUserID: result.globalUserID || ''
+    }
+    console.log('[SSO] User info fetched:', normalizedResult)
+    return normalizedResult
   } catch (error) {
     console.error('[SSO] User info fetch failed:', error)
     throw error

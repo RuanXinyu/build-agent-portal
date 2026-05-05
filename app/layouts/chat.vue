@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { loggedIn } = useUserSession()
+const { open: openLoginModal } = useLoginModal()
 
 const open = ref(false)
 const CHAT_PAGE_SIZE = 20
@@ -168,7 +169,7 @@ onBeforeUnmount(() => {
 watch(loggedIn, (isLoggedIn) => {
   if (!isLoggedIn) {
     clearNuxtData('chats')
-    navigateTo('/auth/sso', { external: true })
+    openLoginModal('chat-layout')
   } else {
     refreshChats()
   }

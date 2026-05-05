@@ -151,34 +151,34 @@ data: {}
 
 在 `.env` 中添加：
 ```
-FLASK_API_URL=http://localhost:5001
+BACKEND_API_URL=http://localhost:5001
 ```
 
 在 `nuxt.config.ts` 的 `runtimeConfig` 中声明：
 ```typescript
 runtimeConfig: {
-  flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001'
+  backendApiUrl: process.env.BACKEND_API_URL || 'http://localhost:5001'
 }
 ```
 
-Server 端通过 `useRuntimeConfig().flaskApiUrl` 读取。
+Server 端通过 `useRuntimeConfig().backendApiUrl` 读取。
 
 ### 文件改动清单
 
 #### `chats.get.ts` — 会话列表
 - 移除硬编码 mock 数据
-- 调用 `GET {flaskApiUrl}/api/chats`
+- 调用 `GET {backendApiUrl}/api/chats`
 - 将响应映射为 `Chat[]` 返回
 
 #### `[id].get.ts` — 会话详情
 - 移除硬编码 mock 数据
-- 调用 `GET {flaskApiUrl}/api/chats/<id>/stream`，收集 SSE events 中的 messages
+- 调用 `GET {backendApiUrl}/api/chats/<id>/stream`，收集 SSE events 中的 messages
 - 组装为 `{ id, title, createdAt, messages, isOwner: true }` 返回
 
 #### `chats.post.ts` — 创建会话
 - 移除 DB 操作（`db.insert(schema.chats)`、`db.insert(schema.messages)`）
 - 移除 `import { db, schema } from 'hub:db'`
-- 调用 `POST {flaskApiUrl}/api/chats`，传入 `{ message }`
+- 调用 `POST {backendApiUrl}/api/chats`，传入 `{ message }`
 - 返回 Flask 返回的会话数据
 
 #### `[id].post.ts` — 流式对话
@@ -188,7 +188,7 @@ Server 端通过 `useRuntimeConfig().flaskApiUrl` 读取。
 - 移除 DB 操作（`db.query.chats.findFirst`、`db.insert(schema.messages)`）
 - 移除 AI SDK `streamText` 调用及相关 import（保留 `streamSSE` 等流工具）
 - 接收前端 POST 请求，提取用户消息
-- 调用 `GET {flaskApiUrl}/api/chats/<id>/stream` 获取 mock SSE 数据
+- 调用 `GET {backendApiUrl}/api/chats/<id>/stream` 获取 mock SSE 数据
 - 在 Nuxt 层将 Flask SSE events 转换为 AI SDK 流协议格式（使用 `createDataStreamResponse` 或 `streamSSE`）返回给前端
 - AI SDK 流协议关键格式：
   - `0:"text"\n` — 文本增量
@@ -216,6 +216,6 @@ Server 端通过 `useRuntimeConfig().flaskApiUrl` 读取。
 ## 后续切换到真实业务接口
 
 切换步骤：
-1. 将 `.env` 中的 `FLASK_API_URL` 改为真实业务接口地址
+1. 将 `.env` 中的 `BACKEND_API_URL` 改为真实业务接口地址
 2. 在 Nuxt server/api 层调整请求参数/响应格式映射（如有差异）
 3. 移除 `scripts/python/server/` 目录

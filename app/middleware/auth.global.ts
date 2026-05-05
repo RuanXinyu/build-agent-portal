@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware((to) => {
+export function resolveAuthGuardResult(to: { path: string }, isServer = import.meta.server) {
   const config = useRuntimeConfig()
 
   // Static token mode doesn't use SSO
@@ -7,7 +7,10 @@ export default defineNuxtRouteMiddleware((to) => {
   if (to.path.startsWith('/chat')) {
     const { loggedIn } = useUserSession()
     if (!loggedIn.value) {
-      return navigateTo('/auth/sso', { external: true })
+      void isServer
+      return navigateTo('/home?auth_required=1')
     }
   }
-})
+}
+
+export default defineNuxtRouteMiddleware((to) => resolveAuthGuardResult(to))

@@ -79,6 +79,9 @@ export default defineEventHandler(async (event) => {
         email: user.email,
         avatar: user.avatar,
         username: user.username,
+        uuid: ssoUser.uuid || '',
+        globalUserID: ssoUser.globalUserID || '',
+        tenantId: ssoUser.tenantId || '',
         provider: 'sso',
         providerId: user.providerId
       },

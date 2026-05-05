@@ -246,14 +246,116 @@ const fallbackDiffMessage = computed(() => {
 })
 
 const markdownRenderError = ref<Error | null>(null)
+const markdownContainer = ref<HTMLElement | null>(null)
+const markdownTocOpen = ref(false)
 const markdownFallbackMessage = computed(() => {
   return 'Markdown 预览失败，已回退为原始文本'
+})
+
+interface MarkdownTocItem {
+  id: string
+  text: string
+  level: number
+}
+
+function stripMarkdownInline(raw: string): string {
+  return raw
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/<[^>]+>/g, '')
+    .trim()
+}
+
+function slugifyHeading(text: string): string {
+  const normalized = text
+    .toLowerCase()
+    .replace(/[^\w\u4e00-\u9fa5\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+  return normalized || 'section'
+}
+
+const markdownTocItems = computed<MarkdownTocItem[]>(() => {
+  if (!isMarkdown.value || !data.value?.content || markdownRenderError.value) {
+    return []
+  }
+
+  const lines = data.value.content.split('\n')
+  const headingRegex = /^ {0,3}(#{1,6})\s+(.+?)\s*$/
+  const idCounter = new Map<string, number>()
+  const items: MarkdownTocItem[] = []
+  let inFence = false
+
+  for (const line of lines) {
+    if (/^ {0,3}```/.test(line)) {
+      inFence = !inFence
+      continue
+    }
+    if (inFence) continue
+
+    const match = line.match(headingRegex)
+    if (!match) continue
+
+    const hashes = match[1]
+    const headingText = match[2]
+    if (!hashes || !headingText) continue
+
+    const rawTitle = headingText.replace(/\s+#+\s*$/, '')
+    const title = stripMarkdownInline(rawTitle)
+    if (!title) continue
+
+    const baseId = slugifyHeading(title)
+    const count = (idCounter.get(baseId) || 0) + 1
+    idCounter.set(baseId, count)
+    const id = count === 1 ? baseId : `${baseId}-${count}`
+    items.push({ id, text: title, level: hashes.length })
+  }
+
+  return items
 })
 
 watch(
   () => [data.value?.filepath, data.value?.content],
   () => {
     markdownRenderError.value = null
+    markdownTocOpen.value = false
+  }
+)
+
+function syncMarkdownHeadingIds() {
+  if (!markdownContainer.value || markdownTocItems.value.length === 0) return
+  const headings = markdownContainer.value.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6')
+  markdownTocItems.value.forEach((item, index) => {
+    const heading = headings[index]
+    if (!heading) return
+    heading.id = item.id
+  })
+}
+
+function scrollToMarkdownHeading(id: string) {
+  const container = markdownContainer.value
+  if (!container) return
+  const target = container.querySelector<HTMLElement>(`#${CSS.escape(id)}`)
+  if (!target) return
+  // 仅滚动 markdown 容器自身，避免 scrollIntoView 波及外层（如消息区）滚动容器
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = target.getBoundingClientRect()
+  const offset = targetRect.top - containerRect.top + container.scrollTop
+  container.scrollTo({ top: offset, behavior: 'smooth' })
+}
+
+watch(
+  () => [isMarkdown.value, data.value?.content, markdownRenderError.value],
+  async () => {
+    if (!isMarkdown.value || markdownRenderError.value) return
+    await nextTick()
+    syncMarkdownHeadingIds()
   }
 )
 
@@ -352,6 +454,15 @@ function getDiffFileKey(file: DiffFile): string {
         </div>
         <div class="flex items-center gap-1 shrink-0">
           <button
+            v-if="isMarkdown && !markdownRenderError && markdownTocItems.length > 0"
+            class="inline-flex items-center justify-center size-7 rounded-md transition-colors"
+            :class="markdownTocOpen ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted hover:text-highlighted hover:bg-elevated/50'"
+            title="切换目录"
+            @click="markdownTocOpen = !markdownTocOpen"
+          >
+            <UIcon name="i-lucide-list-tree" class="size-4" />
+          </button>
+          <button
             v-if="isDiff && hasRenderableDiff"
             class="inline-flex items-center justify-center size-7 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
             title="切换对比模式"
@@ -369,9 +480,10 @@ function getDiffFileKey(file: DiffFile): string {
           <button
             v-if="data.previewable"
             class="inline-flex items-center justify-center size-7 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
+            :title="embedded ? '放大预览' : '还原预览'"
             @click="toggleMaximize"
           >
-            <UIcon name="i-lucide-maximize-2" class="size-4" />
+            <UIcon :name="embedded ? 'i-lucide-maximize-2' : 'i-lucide-minimize-2'" class="size-4" />
           </button>
         </div>
       </div>
@@ -380,14 +492,36 @@ function getDiffFileKey(file: DiffFile): string {
       <template v-if="data.previewable">
         <!-- Markdown rendering -->
         <div v-if="isMarkdown" class="flex-1 min-h-0 flex flex-col">
-          <div v-if="!markdownRenderError" class="flex-1 overflow-y-auto">
-            <div class="prose prose-sm dark:prose-invert max-w-none p-4">
-              <ChatComark
-                :markdown="data.content || ''"
-                :plugins="[emoji(), binding(), breaks(), mermaid(), taskList(), toc({ depth: 2 }), highlight({ themes: { light: githubLight, dark: githubDark } })]"
-                :components="{ Binding, mermaid: Mermaid }"
-              />
+          <div v-if="!markdownRenderError" class="flex-1 min-h-0 flex overflow-hidden">
+            <div ref="markdownContainer" class="flex-1 overflow-y-auto">
+              <div class="prose prose-sm dark:prose-invert max-w-none p-4">
+                <ChatComark
+                  :markdown="data.content || ''"
+                  :plugins="[emoji(), binding(), breaks(), mermaid(), taskList(), toc({ depth: 2 }), highlight({ themes: { light: githubLight, dark: githubDark } })]"
+                  :components="{ Binding, mermaid: Mermaid }"
+                />
+              </div>
             </div>
+            <aside
+              v-if="markdownTocOpen && markdownTocItems.length > 0"
+              class="w-64 border-l border-default bg-elevated/20 p-3 overflow-y-auto"
+            >
+              <p class="text-xs font-medium text-muted uppercase tracking-wide mb-2">
+                目录
+              </p>
+              <ul class="space-y-1">
+                <li v-for="item in markdownTocItems" :key="item.id">
+                  <button
+                    class="w-full text-left text-xs rounded px-2 py-1 text-toned hover:text-highlighted hover:bg-elevated/60 transition-colors truncate"
+                    :style="{ paddingLeft: `${Math.max(8, item.level * 10)}px` }"
+                    :title="item.text"
+                    @click="scrollToMarkdownHeading(item.id)"
+                  >
+                    {{ item.text }}
+                  </button>
+                </li>
+              </ul>
+            </aside>
           </div>
           <div v-else class="flex-1 min-h-0 flex flex-col">
             <div class="mx-4 mt-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-warning text-sm">

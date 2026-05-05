@@ -59,5 +59,11 @@
     "typescript": "^6.0.2",
     "vue-tsc": "^3.2.6"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "vue": "3.5.33",
+      "@vue/server-renderer": "3.5.33"
+    }
+  }
 }

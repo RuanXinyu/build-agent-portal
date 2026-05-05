@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AuthLoginModalHost from '~/components/auth/LoginModalHost.vue'
+
 const colorMode = useColorMode()
 const route = useRoute()
 
@@ -36,5 +38,7 @@ useSeoMeta({
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+
+    <AuthLoginModalHost />
   </UApp>
 </template>

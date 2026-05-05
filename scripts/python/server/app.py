@@ -97,6 +97,15 @@ def upsert_chat():
     })
 
 
+@app.route("/buildagent/v1/agent/chats/<chat_id>", methods=["GET"])
+def get_chat_detail(chat_id):
+    """会话详情：返回单个 chat 的元信息（title / createdAt 等）"""
+    chat, _logs = get_chat(chat_id)
+    if not chat:
+        return jsonify({"error": "Chat not found"}), 404
+    return jsonify({"data": chat})
+
+
 @app.route("/buildagent/v1/agent/chats/<chat_id>/logs/stream", methods=["POST"])
 def stream_chat(chat_id):
     """返回 opencode NDJSON 格式流（支持 after_ts 增量过滤）"""
@@ -288,9 +297,15 @@ def sso_userinfo():
     return jsonify(user)
 
 
-@app.route("/sso/token-exchange", methods=["POST"])
+@app.route("/sso/token-exchange", methods=["GET", "POST"])
 def sso_token_exchange():
-    """Mock token exchange — accepts SSO Cookie, returns x-auth-token."""
+    """Mock token exchange — accepts SSO Cookie (+ HW-style signed headers on GET),
+    returns x-auth-token.
+
+    Nuxt server (server/utils/tokenExchange.ts) calls this with GET and
+    signs `${path}|GET|${date}|${ak}|${sk}` into X-HW-SIGN; we accept it as long
+    as the SSO Cookie is valid. POST kept for backward compatibility.
+    """
     cookie_header = request.headers.get("Cookie", "")
     sso_cookie = None
     for part in cookie_header.split(";"):

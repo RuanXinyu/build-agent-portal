@@ -557,7 +557,7 @@ export default defineEventHandler(async (event) => {
   const result = await $fetch<{
     chat_id: string
     message_id: string
-  }>(`${config.flaskApiUrl}/api/chats`, {
+  }>(`${config.backendApiUrl}/api/chats`, {
     method: 'POST',
     body: {
       chat_id: body.chat_id || '',
@@ -757,7 +757,7 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
 
   // 先获取会话元信息
-  const chats = await $fetch<FlaskChat[]>(`${config.flaskApiUrl}/api/chats`)
+  const chats = await $fetch<FlaskChat[]>(`${config.backendApiUrl}/api/chats`)
   const chat = chats.find(c => c.id === id || c.chat_id === id)
 
   if (!chat) {
@@ -769,7 +769,7 @@ export default defineEventHandler(async (event) => {
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         // 构造 URL（带 after_ts）
-        let url = `${config.flaskApiUrl}/api/chats/${id}/stream`
+        let url = `${config.backendApiUrl}/api/chats/${id}/stream`
         if (afterTs) {
           url += `?after_ts=${afterTs}`
         }
@@ -848,7 +848,7 @@ export default defineEventHandler(async (event) => {
     return createUIMessageStreamResponse({ stream })
   } else {
     // === JSON 初次加载模式 ===
-    const response = await fetch(`${config.flaskApiUrl}/api/chats/${id}/stream`)
+    const response = await fetch(`${config.backendApiUrl}/api/chats/${id}/stream`)
     if (!response.ok) {
       throw createError({ statusCode: response.status, statusMessage: 'Chat not found' })
     }

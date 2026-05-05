@@ -6,9 +6,10 @@ defineProps<{
 }>()
 
 const { loggedIn } = useUserSession()
+const { requestLogin } = useLoginModal()
 
-function loginWithSSO() {
-  window.location.href = '/auth/sso'
+function openLoginModal() {
+  requestLogin('header-login')
 }
 
 const navItems = computed<NavigationMenuItem[]>(() => [
@@ -45,7 +46,7 @@ const navItems = computed<NavigationMenuItem[]>(() => [
           icon="i-lucide-log-in"
           color="neutral"
           variant="ghost"
-          @click="loginWithSSO()"
+          @click="openLoginModal()"
         />
       </template>
     </template>

@@ -1,5 +1,6 @@
 import { ofetch } from 'ofetch'
 import type { H3Event } from 'h3'
+import { createHash } from 'node:crypto'
 
 interface TokenExchangeResponse {
   token: string
@@ -7,24 +8,37 @@ interface TokenExchangeResponse {
 }
 
 /**
- * Read the SSO Cookie from the incoming request and exchange it for an x-auth-token.
+ * Read the incoming cookies and exchange for an x-auth-token.
  * Returns the x-auth-token string, or null if exchange fails.
  */
 export async function exchangeSSOCookieForToken(event: H3Event): Promise<string | null> {
   const config = useRuntimeConfig()
-  const ssoCookie = getCookie(event, config.ssoCookieName)
+  const rawCookie = getRequestHeader(event, 'cookie')
 
-  if (!ssoCookie) {
-    console.log('[SSO] No SSO Cookie found in request')
+  if (!rawCookie) {
+    console.log('[SSO] No Cookie header found in request')
     return null
   }
 
+  if (!config.ssoAccessKey || !config.ssoSecretKey) {
+    console.error('[SSO] Missing HW AK/SK for token exchange signing')
+    return null
+  }
+
+  const exchangePath = new URL(config.tokenExchangeUrl).pathname
+  const date = new Date().toISOString()
+  const signInput = `${exchangePath}|GET|${date}|${config.ssoAccessKey}|${config.ssoSecretKey}`
+  const sign = createHash('sha256').update(signInput).digest('hex')
+
   try {
-    console.log('[SSO] Exchanging SSO Cookie for x-auth-token')
+    console.log('[SSO] Exchanging cookies for x-auth-token')
     const res = await ofetch<TokenExchangeResponse>(config.tokenExchangeUrl, {
-      method: 'POST',
+      method: 'GET',
       headers: {
-        Cookie: `${config.ssoCookieName}=${ssoCookie}`
+        Cookie: rawCookie,
+        'X-HW-ACCESS-KEY': config.ssoAccessKey,
+        'X-HW-DATE': date,
+        'X-HW-SIGN': sign
       }
     })
     console.log('[SSO] Token exchange successful')

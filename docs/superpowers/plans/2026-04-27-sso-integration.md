@@ -24,12 +24,12 @@
 | Create | `server/utils/internalService.ts` | Generic internal service request utility (reads x-auth-token from session, injects header) |
 | Create | `server/routes/auth/sso.get.ts` | OAuth callback handler: exchange code, get x-auth-token, get UserInfo, upsert user, set session |
 | Create | `server/middleware/auth.ts` | Auth middleware: ensure session + x-auth-token, handle token refresh on 401 |
-| Modify | `server/api/v1/agent/chats.get.ts` | Replace `$fetch(config.flaskApiUrl)` with `useInternalService()` |
-| Modify | `server/api/v1/agent/chats.post.ts` | Replace `$fetch(config.flaskApiUrl)` with `useInternalService()` |
-| Modify | `server/api/v1/agent/chats/[id].get.ts` | Replace `$fetch(config.flaskApiUrl)` with `useInternalService()` |
-| Modify | `server/api/v1/files.get.ts` | Replace `$fetch(config.flaskApiUrl)` with `useInternalService()` |
-| Modify | `server/api/v1/files/content.get.ts` | Replace `$fetch(config.flaskApiUrl)` with `useInternalService()` |
-| Modify | `server/api/v1/files/download.get.ts` | Replace `$fetch(config.flaskApiUrl)` with `useInternalService()` |
+| Modify | `server/api/v1/agent/chats.get.ts` | Replace `$fetch(config.backendApiUrl)` with `useInternalService()` |
+| Modify | `server/api/v1/agent/chats.post.ts` | Replace `$fetch(config.backendApiUrl)` with `useInternalService()` |
+| Modify | `server/api/v1/agent/chats/[id].get.ts` | Replace `$fetch(config.backendApiUrl)` with `useInternalService()` |
+| Modify | `server/api/v1/files.get.ts` | Replace `$fetch(config.backendApiUrl)` with `useInternalService()` |
+| Modify | `server/api/v1/files/content.get.ts` | Replace `$fetch(config.backendApiUrl)` with `useInternalService()` |
+| Modify | `server/api/v1/files/download.get.ts` | Replace `$fetch(config.backendApiUrl)` with `useInternalService()` |
 | Modify | `app/components/AppHeader.vue` | Change login URL from `/auth/github` to `/auth/sso` |
 | Delete | `server/routes/auth/github.get.ts` | Remove GitHub OAuth handler |
 
@@ -48,7 +48,7 @@ Replace the existing `runtimeConfig` block (lines 30-32) with:
 
 ```ts
 runtimeConfig: {
-    flaskApiUrl: process.env.FLASK_API_URL || 'http://localhost:5001',
+    backendApiUrl: process.env.BACKEND_API_URL || 'http://localhost:5001',
     ssoClientId: process.env.NUXT_SSO_CLIENT_ID || '',
     ssoClientSecret: process.env.NUXT_SSO_CLIENT_SECRET || '',
     ssoAuthorizeUrl: process.env.NUXT_SSO_AUTHORIZE_URL || '',
@@ -92,7 +92,7 @@ NUXT_SSO_REDIRECT_URL=
 NUXT_TOKEN_EXCHANGE_URL=
 NUXT_SSO_COOKIE_NAME=sso_token
 # Internal service base URL
-FLASK_API_URL=http://localhost:5001
+BACKEND_API_URL=http://localhost:5001
 # Blob read write token
 BLOB_READ_WRITE_TOKEN=
 ```
@@ -367,7 +367,7 @@ export async function useInternalService<T>(
     })
   }
 
-  return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+  return await ofetch<T>(`${config.backendApiUrl}${path}`, {
     method: options.method || 'GET',
     params: options.params,
     body: options.body,
@@ -507,7 +507,7 @@ export async function useInternalService<T>(
   }
 
   try {
-    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+    return await ofetch<T>(`${config.backendApiUrl}${path}`, {
       method: options.method || 'GET',
       params: options.params,
       body: options.body,
@@ -536,7 +536,7 @@ export async function useInternalService<T>(
     await setUserSession(event, { xAuthToken: newToken } as Record<string, unknown>)
 
     // Retry the request with the new token
-    return await ofetch<T>(`${config.flaskApiUrl}${path}`, {
+    return await ofetch<T>(`${config.backendApiUrl}${path}`, {
       method: options.method || 'GET',
       params: options.params,
       body: options.body,
@@ -575,7 +575,7 @@ git commit -m "feat: add token refresh retry to internal service utility"
 - Modify: `server/api/v1/files/content.get.ts`
 - Modify: `server/api/v1/files/download.get.ts`
 
-All routes replace direct `$fetch(config.flaskApiUrl)` calls with `useInternalService(event, path, options)`. The utility handles auth headers, so routes only specify the path relative to the base URL.
+All routes replace direct `$fetch(config.backendApiUrl)` calls with `useInternalService(event, path, options)`. The utility handles auth headers, so routes only specify the path relative to the base URL.
 
 - [ ] **Step 1: Update `server/api/v1/agent/chats.get.ts`**
 
@@ -774,7 +774,7 @@ export default defineEventHandler(async (event) => {
         }
 
         const config = useRuntimeConfig()
-        const response = await fetch(`${config.flaskApiUrl}${url}`, {
+        const response = await fetch(`${config.backendApiUrl}${url}`, {
           headers: {
             'X-Auth-Token': xAuthToken || ''
           }
@@ -882,7 +882,7 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
 
   const response = await fetch(
-    `${config.flaskApiUrl}/api/chats/${id}/stream`,
+    `${config.backendApiUrl}/api/chats/${id}/stream`,
     {
       headers: {
         'X-Auth-Token': xAuthToken || ''

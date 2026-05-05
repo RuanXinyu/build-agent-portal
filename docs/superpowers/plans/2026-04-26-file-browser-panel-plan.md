@@ -438,7 +438,7 @@ export default defineEventHandler(async (event) => {
     type: 'directory' | 'file'
     size?: number
     language?: string | null
-  }> }>(`${config.flaskApiUrl}/api/files`, {
+  }> }>(`${config.backendApiUrl}/api/files`, {
     params: { path }
   })
 
@@ -467,7 +467,7 @@ export default defineEventHandler(async (event) => {
     content: string | null
     previewable: boolean
     downloadUrl?: string
-  }>(`${config.flaskApiUrl}/api/files/content`, {
+  }>(`${config.backendApiUrl}/api/files/content`, {
     params: { path }
   })
 
@@ -489,7 +489,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'path parameter is required' })
   }
 
-  const res = await $fetch<ArrayBuffer>(`${config.flaskApiUrl}/api/files/download`, {
+  const res = await $fetch<ArrayBuffer>(`${config.backendApiUrl}/api/files/download`, {
     params: { path }
   })
 

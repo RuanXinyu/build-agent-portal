@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Diff2Html } from 'diff2html'
+import { html as renderDiffHtml } from 'diff2html'
 import 'diff2html/bundles/css/diff2html.min.css'
 import type { FileResult } from 'diff2html/lib/types'
 
@@ -11,21 +11,19 @@ const props = defineProps<{
 const colorMode = useColorMode()
 
 const displayFileName = computed(() => {
-  if (props.fileDiff.newName && props.fileDiff.newName !== '/dev/null') {
-    return props.fileDiff.newName.replace(/^a\//, '')
-  }
-  if (props.fileDiff.oldName && props.fileDiff.oldName !== '/dev/null') {
-    return props.fileDiff.oldName.replace(/^b\//, '')
-  }
-  return props.fileDiff.oldName || props.fileDiff.newName || 'unknown'
+  const name = props.fileDiff.newName !== '/dev/null' && props.fileDiff.newName
+    ? props.fileDiff.newName
+    : props.fileDiff.oldName !== '/dev/null' && props.fileDiff.oldName
+      ? props.fileDiff.oldName
+      : ''
+  return name || 'unknown'
 })
 
 const diffHtml = computed(() => {
-  return Diff2Html.generateFromJson([props.fileDiff], {
+  return renderDiffHtml([props.fileDiff], {
     outputFormat: props.diffMode === 'side-by-side' ? 'side-by-side' : 'line-by-line',
     drawFileList: false,
     matching: 'lines',
-    synchronisedScroll: true,
   })
 })
 
@@ -67,7 +65,7 @@ const isDark = computed(() => colorMode.value === 'dark')
   display: none;
 }
 
-/* Light mode adjustments */
+/* Hide diff2html file tags */
 :deep(.d2h-tag) {
   display: none;
 }

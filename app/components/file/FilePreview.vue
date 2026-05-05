@@ -307,13 +307,17 @@ function toggleMaximize() {
 
         <!-- Diff/Patch rendering -->
         <div v-else-if="isDiff" class="flex-1 overflow-y-auto">
-          <div class="flex flex-col gap-4 p-4">
+          <div v-if="parsedFiles.length" class="flex flex-col gap-4 p-4">
             <DiffFileCard
-              v-for="(file, index) in parsedFiles"
-              :key="index"
+              v-for="file in parsedFiles"
+              :key="file.oldName + ' -> ' + file.newName"
               :file-diff="file"
               :diff-mode="diffMode"
             />
+          </div>
+          <div v-else class="flex flex-col items-center justify-center gap-3 py-16 text-muted">
+            <UIcon name="i-lucide-file-x" class="size-8" />
+            <span class="text-sm">无法解析 Diff 内容</span>
           </div>
         </div>
 

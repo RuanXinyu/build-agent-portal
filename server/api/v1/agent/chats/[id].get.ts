@@ -129,6 +129,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
+  // JSON initial load mode
+  const config = useRuntimeConfig()
+  const session = await getUserSession(event)
+  const xAuthToken = config.staticAuthToken || session.secure?.xAuthToken
+  
   // SSE streaming mode
   if (isStream) {
     const session = await getUserSession(event)
@@ -244,11 +249,6 @@ export default defineEventHandler(async (event) => {
 
     return createUIMessageStreamResponse({ stream })
   }
-
-  // JSON initial load mode
-  const session = await getUserSession(event)
-  const xAuthToken = session.secure?.xAuthToken
-  const config = useRuntimeConfig()
 
   const response = await fetch(
     `${config.flaskApiUrl}/buildagent/v1/agent/chats/${id}/logs/stream`,

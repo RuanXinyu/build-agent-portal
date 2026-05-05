@@ -154,7 +154,6 @@ async function handleSubmit(e: Event) {
 
 <template>
   <UDashboardPanel
-    v-if="data?.id"
     id="chat"
     class="relative min-h-0"
     :ui="{ body: 'flex flex-col flex-1 p-0 sm:p-0 overscroll-none' }"
@@ -268,10 +267,6 @@ async function handleSubmit(e: Event) {
       </div>
     </template>
   </UDashboardPanel>
-
-  <UContainer v-else class="flex-1 flex flex-col gap-4 sm:gap-6">
-    <UError :error="{ statusMessage: 'Chat not found', statusCode: 404 }" class="min-h-full" />
-  </UContainer>
 </template>
 
 <style scoped>

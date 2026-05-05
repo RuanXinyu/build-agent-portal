@@ -63,6 +63,15 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    server: {
+      allowedHosts: [
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "buildmate.clouddragon.huawei.com",
+        "buildagent.clouddragon.huawei.com"
+      ]
+    },
     optimizeDeps: {
       include: ['striptags']
     }

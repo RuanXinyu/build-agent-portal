@@ -35,7 +35,7 @@ function isPreviewable(filename: string): boolean {
 
 interface FlaskContentResponse {
   data: {
-    name: string
+    filepath: string
     size: number
     content: string | null
   }
@@ -57,14 +57,14 @@ export default defineEventHandler(async (event) => {
   const flaskResponse = await useInternalService<FlaskContentResponse>(
     event,
     `/buildagent/v1/agent/chats/${chatId}/workspace/output/files/content`,
-    { params: { filepath: path } }
+    { params: { filepath: path.replace(/^\/+/, "") } }
   )
 
   if (flaskResponse.error) {
     throw createError({ statusCode: 400, statusMessage: flaskResponse.error })
   }
 
-  const { name, size, content } = flaskResponse.data
+  const { filepath, size, content } = flaskResponse.data
 
   let decodedContent: string | null = null
   if (content) {
@@ -72,10 +72,10 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    name,
-    language: getLanguage(name),
+    filepath,
+    language: getLanguage(filepath),
     size,
     content: decodedContent,
-    previewable: isPreviewable(name),
+    previewable: isPreviewable(filepath),
   }
 })

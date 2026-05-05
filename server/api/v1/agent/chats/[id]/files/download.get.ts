@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const res = await useInternalService<ArrayBuffer>(
     event,
     `/buildagent/v1/agent/chats/${chatId}/workspace/output/files/download`,
-    { params: { filepath: path } }
+    { params: { filepath: path.replace(/^\/+/, "")} }
   )
 
   const filename = path.split('/').pop() || 'file'

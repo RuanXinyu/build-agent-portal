@@ -3,7 +3,7 @@ import { VueMonacoEditor, VueMonacoDiffEditor } from '@guolao/vue-monaco-editor'
 import parseDiff from 'parse-diff'
 
 interface FileContentResponse {
-  name: string
+  filepath: string
   language: string | null
   size: number
   content: string | null
@@ -163,8 +163,8 @@ const lineCount = computed(() => {
 })
 
 const fileExtension = computed(() => {
-  if (!data.value?.name) return ''
-  const parts = data.value.name.split('.')
+  if (!data.value?.filepath) return ''
+  const parts = data.value.filepath.split('.')
   return parts.length > 1 ? `.${parts[parts.length - 1]}` : ''
 })
 
@@ -175,8 +175,11 @@ const isMarkdown = computed(() => {
 const isDiff = computed(() => {
   if (!data.value) return false
   if (data.value.language?.toLowerCase() === 'diff') return true
-  const name = data.value.name.toLowerCase()
-  return name.endsWith('.patch') || name.endsWith('.diff')
+  const filepath = data.value.filepath.toLowerCase()
+  if (!filepath) {
+    return false
+  }
+  return filepath.endsWith('.patch') || filepath.endsWith('.diff')
 })
 
 const downloadUrl = computed(() => {

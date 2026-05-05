@@ -193,7 +193,7 @@ def get_file_content(path):
         encoded = None
 
     return {
-        "name": name,
+        "filepath": name,
         "size": size,
         "content": encoded,
     }

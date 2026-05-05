@@ -12,8 +12,8 @@ function loginWithSSO() {
 }
 
 const navItems = computed<NavigationMenuItem[]>(() => [
-  { label: '首页', to: '/home', icon: 'i-lucide-home' },
-  { label: '工具', to: '/cli', icon: 'ic:round-terminal' },
+  { label: '首页', to: '/home', icon: 'i-lucide-house' },
+  { label: '工具', to: '/cli', icon: 'i-lucide-square-terminal' },
   { label: '会话', to: '/chat', icon: 'i-lucide-messages-square' }
 ])
 </script>

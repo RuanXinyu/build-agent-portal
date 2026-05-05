@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     }>
   }>(
     event,
-    '/buildagent/v1/agent/chats?page=1'
+    '/buildagent/v1/agent/chats'
   )
 
   return res.data.map(chat => ({

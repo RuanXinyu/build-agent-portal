@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const flaskResponse = await useInternalService<FlaskFilesResponse>(
     event,
     `/buildagent/v1/agent/chats/${chatId}/workspace/output/files`,
-    { params: { filepath, recursive: 'true', depth: '2' } }
+    { params: { filepath, recursive: 'true', recursion: 'true', depth: '2' } }
   )
 
   if (flaskResponse.error) {

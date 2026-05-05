@@ -6,6 +6,7 @@ for testing the file browser panel.
 """
 
 import base64
+import os
 
 
 # Mock project directory tree
@@ -77,10 +78,27 @@ MOCK_FILE_TREE = {
         ("package.json", "file", 512, '{\n  "name": "myapp",\n  "version": "1.0.0",\n  "private": true,\n  "scripts": {\n    "dev": "vite",\n    "build": "vue-tsc && vite build",\n    "preview": "vite preview",\n    "test": "vitest",\n    "lint": "eslint . --ext .ts,.vue"\n  },\n  "dependencies": {\n    "vue": "^3.4.0",\n    "vue-router": "^4.3.0",\n    "jsonwebtoken": "^9.0.0"\n  },\n  "devDependencies": {\n    "typescript": "^5.4.0",\n    "vite": "^5.2.0",\n    "vitest": "^1.6.0",\n    "vue-tsc": "^2.0.0"\n  }\n}\n'),
         ("tsconfig.json", "file", 378, '{\n  "compilerOptions": {\n    "target": "ES2022",\n    "module": "ESNext",\n    "moduleResolution": "bundler",\n    "strict": true,\n    "jsx": "preserve",\n    "resolveJsonModule": true,\n    "isolatedModules": true,\n    "esModuleInterop": true,\n    "lib": ["ES2022", "DOM"],\n    "skipLibCheck": true,\n    "paths": {\n      "@/*": ["./src/*"]\n    }\n  },\n  "include": ["src/**/*", "tests/**/*"],\n  "exclude": ["node_modules"]\n}\n'),
         (".gitignore", "file", 156, "node_modules/\ndist/\n.output/\n.env\n.env.local\n*.log\n.DS_Store\ncoverage/\n.cache/\n"),
-        ("README.md", "file", 423, "# MyApp\n\nA modern web application built with Vue 3 and TypeScript.\n\n## Quick Start\n\n```bash\nnpm install\nnpm run dev\n```\n\n## Features\n\n- User authentication with JWT\n- Dashboard with real-time stats\n- Responsive design\n- TypeScript throughout\n\n## Project Structure\n\n```\nsrc/\n  components/   # Vue components\n  pages/        # Page components\n  utils/        # Utility functions\nserver/\n  api/          # API routes\n  db/           # Database schema\ntests/         # Test files\n```\n"),
+        ("README.md", "file", 423, "\n==================\n\n\n# MyApp\n\nA modern web application built with Vue 3 and TypeScript.\n\n## Quick Start\n\n```bash\nnpm install\nnpm run dev\n```\n\n## Features\n\n- User authentication with JWT\n- Dashboard with real-time stats\n- Responsive design\n- TypeScript throughout\n\n## Project Structure\n\n```\nsrc/\n  components/   # Vue components\n  pages/        # Page components\n  utils/        # Utility functions\nserver/\n  api/          # API routes\n  db/           # Database schema\ntests/         # Test files\n```\n"),
         ("hotfix.patch", "file", 589, 'diff --git a/src/utils/auth.ts b/src/utils/auth.ts\nindex a1b2c3d..e4f5g6h 100644\n--- a/src/utils/auth.ts\n+++ b/src/utils/auth.ts\n@@ -15,6 +15,10 @@ const TOKEN_EXPIRY = "7d"\n \n export interface TokenPayload {\n   userId: string\n   email: string\n-  role: "admin" | "user"\n+  role: "admin" | "user" | "moderator"\n+  permissions: string[]\n }\n+\n+export const DEFAULT_PERMISSIONS = ["read"] as const\n'),
     ]
 }
+
+
+def _load_code_patch_content():
+    """Load code.patch content from current directory."""
+    patch_path = os.path.join(os.path.dirname(__file__), "code.patch")
+    with open(patch_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def _get_patch_payload(default_content):
+    """Return patch text and byte size; fallback to default content."""
+    try:
+        patch_text = _load_code_patch_content()
+    except (FileNotFoundError, OSError):
+        patch_text = default_content or ""
+
+    return patch_text, len(patch_text.encode("utf-8"))
 
 
 def _resolve_dir(path):
@@ -165,6 +183,8 @@ def list_directory(path="/", recursive=True, depth=2):
                 result.append(item)
             else:
                 size = entry[2]
+                if name.endswith(".patch"):
+                    _, size = _get_patch_payload(entry[3])
                 result.append({
                     "filename": name,
                     "type": "file",
@@ -186,6 +206,9 @@ def get_file_content(path):
         return None
 
     name, _, size, content = entry
+
+    if name.endswith(".patch"):
+        content, size = _get_patch_payload(content)
 
     if content is not None:
         encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")

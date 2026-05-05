@@ -33,6 +33,12 @@ interface FlaskChat {
   createdAt: string
 }
 
+function toEpochMs(timestamp: unknown): number {
+  const numeric = typeof timestamp === 'string' ? Number(timestamp) : Number(timestamp)
+  if (!Number.isFinite(numeric) || numeric <= 0) return 0
+  return numeric < 1e12 ? numeric * 1000 : numeric
+}
+
 function parseNDJSON(text: string): OpenCodeEvent[] {
   const events: OpenCodeEvent[] = []
   for (const line of text.split('\n')) {
@@ -66,7 +72,7 @@ function convertToMessages(events: OpenCodeEvent[]) {
       messageMap.set(messageId, {
         role: 'assistant',
         parts: [],
-        createdAt: new Date(event.timestamp).toISOString()
+        createdAt: new Date(toEpochMs(event.timestamp)).toISOString()
       })
     }
 
@@ -294,8 +300,9 @@ export default defineEventHandler(async (event) => {
 
   let lastTimestamp = 0
   for (const ev of events) {
-    if (ev.timestamp > lastTimestamp) {
-      lastTimestamp = ev.timestamp
+    const timestamp = Number(ev.timestamp) || 0
+    if (timestamp > lastTimestamp) {
+      lastTimestamp = timestamp
     }
   }
 

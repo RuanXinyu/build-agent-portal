@@ -11,6 +11,16 @@ const route = useRoute()
 const toast = useToast()
 const { csrf, headerName } = useCsrf()
 
+function getMessageText(message?: UIMessage) {
+  if (!message) return ''
+
+  return message.parts
+    ?.filter((p: any) => p.type === 'text')
+    ?.map((p: any) => p.text)
+    ?.join('')
+    ?.trim() || ''
+}
+
 interface ChatData {
   id: string
   title: string | null
@@ -21,12 +31,25 @@ interface ChatData {
 }
 
 const { data } = await useFetch<ChatData>(`/api/v1/agent/chats/${route.params.id}`)
-console.log(data.value)
 
 const isOwner = computed(() => data.value?.isOwner ?? false)
 
 const input = ref('')
-const lastTimestamp = ref(data.value?.lastTimestamp ?? 0)
+type TimestampUnit = 'seconds' | 'milliseconds'
+
+function detectTimestampUnit(value: number): TimestampUnit {
+  return value > 0 && value < 1e12 ? 'seconds' : 'milliseconds'
+}
+
+function nowByUnit(unit: TimestampUnit): number {
+  return unit === 'seconds'
+    ? Math.floor(Date.now() / 1000)
+    : Date.now()
+}
+
+const initialLastTimestamp = Number(data.value?.lastTimestamp ?? 0)
+const timestampUnit = ref<TimestampUnit>(detectTimestampUnit(initialLastTimestamp))
+const lastTimestamp = ref(initialLastTimestamp)
 const panelOpen = ref(false)
 const maximizedFile = ref<string | null>(null)
 
@@ -68,6 +91,8 @@ watch(maximizedFile, (path) => {
 const customTransport: ChatTransport<UIMessage> = {
   async sendMessages({
     chatId,
+    messageId,
+    trigger,
     messages,
     abortSignal
   }: {
@@ -77,22 +102,40 @@ const customTransport: ChatTransport<UIMessage> = {
     messages: UIMessage[]
     abortSignal: AbortSignal | undefined
   } & ChatRequestOptions): Promise<ReadableStream<UIMessageChunk>> {
-    // Extract text from the last message
-    const lastMessage = messages[messages.length - 1]
-    const text = lastMessage?.parts
-      ?.filter((p: any) => p.type === 'text')
-      ?.map((p: any) => p.text)
-      ?.join('') || ''
+    // Only send the newly added user prompt, not full history.
+    const currentMessage = messageId
+      ? messages.find(message => message.id === messageId)
+      : undefined
+    const latestUserMessage = [...messages].reverse().find(message => message.role === 'user')
+    const prompt = getMessageText(
+      trigger === 'submit-message' ? (currentMessage ?? latestUserMessage) : latestUserMessage
+    )
+    if (!prompt) {
+      throw new Error('消息内容不能为空')
+    }
 
     // 1. POST to trigger chat
-    const result = await $fetch<{ chat_id: string, message_id: string }>('/api/v1/agent/chats', {
+    const body: { prompt: string; chat_id?: string } = { prompt }
+    if (chatId) {
+      body.chat_id = chatId
+    }
+
+    const result = await $fetch<{ chat_id?: string, chatId?: string, id?: string, message_id?: string }>('/api/v1/agent/chats', {
       method: 'POST',
       headers: { [headerName]: csrf },
-      body: { chat_id: chatId, prompt: text }
+      body
     })
+    const resolvedChatId = result.chat_id ?? result.chatId ?? result.id
+    if (!resolvedChatId) {
+      throw new Error('发送失败：接口未返回有效 chat_id')
+    }
+
+    if (String(route.params.id) !== String(resolvedChatId)) {
+      await navigateTo(`/chat/${resolvedChatId}`)
+    }
 
     // 2. Fetch SSE stream with lastTimestamp for incremental queries
-    const url = `/api/v1/agent/chats/${result.chat_id}?stream=true&after_ts=${lastTimestamp.value}`
+    const url = `/api/v1/agent/chats/${resolvedChatId}?stream=true&after_ts=${lastTimestamp.value}`
     const response = await fetch(url, { signal: abortSignal })
 
     if (!response.body) throw new Error('No response body')
@@ -131,12 +174,16 @@ const chat = new Chat({
   }
 })
 
+const visibleMessages = computed(() =>
+  chat.messages.filter(message => getMessageText(message))
+)
+
 // Update lastTimestamp when streaming completes
 watch(
   () => chat.status,
   (status) => {
     if (status === 'ready') {
-      lastTimestamp.value = Date.now()
+      lastTimestamp.value = nowByUnit(timestampUnit.value)
     }
   }
 )
@@ -168,7 +215,7 @@ async function handleSubmit(e: Event) {
           size="sm"
           aria-label="浏览文件"
           :aria-pressed="panelOpen"
-          class="absolute top-3 right-3 z-10"
+          class="absolute top-2 right-5 z-200"
           @click="panelOpen = !panelOpen"
         />
         <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0 min-h-0 relative max-w-7xl">
@@ -176,7 +223,7 @@ async function handleSubmit(e: Event) {
             should-auto-scroll
             :user="{
               side: 'right',
-              variant: 'soft',
+              variant: 'solid',
               avatar: {
                 icon: 'i-lucide-user'
               },
@@ -188,7 +235,7 @@ async function handleSubmit(e: Event) {
                 icon: 'i-lucide-bot'
               },
             }"
-            :messages="chat.messages"
+            :messages="visibleMessages"
             :status="chat.status"
             :spacing-offset="isOwner ? 160 : 0"
             class="pt-3 pb-4 sm:pb-6"
@@ -210,7 +257,7 @@ async function handleSubmit(e: Event) {
             <template v-if="isOwner" #actions="{ message }">
               <ChatMessageActions
                 :message="message"
-                :streaming="chat.status === 'streaming' && message.id === chat.messages[chat.messages.length - 1]?.id"
+                :streaming="chat.status === 'streaming' && message.id === visibleMessages[visibleMessages.length - 1]?.id"
               />
             </template>
           </UChatMessages>
@@ -258,6 +305,7 @@ async function handleSubmit(e: Event) {
         </UContainer>
 
         <FileBrowserPanel
+          title="Agent产物"
           :chat-id="String(route.params.id)"
           v-model:open="panelOpen"
           :maximized-file="maximizedFile"

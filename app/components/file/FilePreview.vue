@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import { parse as parseDiff } from 'diff2html'
+import type { DiffFile } from 'diff2html/lib/types'
+import emoji from '@comark/vue/plugins/emoji'
+import binding, { Binding } from '@comark/vue/plugins/binding'
+import breaks from '@comark/vue/plugins/breaks'
+import mermaid, { Mermaid } from '@comark/vue/plugins/mermaid'
+import taskList from '@comark/vue/plugins/task-list'
+import toc from '@comark/vue/plugins/toc'
+import highlight from '@comark/vue/plugins/highlight'
+import githubLight from '@shikijs/themes/github-light'
+import githubDark from '@shikijs/themes/github-dark'
 
 interface FileContentResponse {
   filepath: string
@@ -8,6 +18,13 @@ interface FileContentResponse {
   size: number
   content: string | null
   previewable: boolean
+}
+
+interface ParsedDiffState {
+  ok: boolean
+  files: DiffFile[]
+  errorMessage: string | null
+  rawContent: string
 }
 
 const props = defineProps<{
@@ -189,12 +206,68 @@ const downloadUrl = computed(() => {
 
 // --- Diff/Patch parsing ---
 
-const parsedFiles = computed(() => {
-  if (!isDiff.value || !data.value?.content) return []
-  return parseDiff(data.value.content)
+const parsedDiff = computed<ParsedDiffState>(() => {
+  const rawContent = data.value?.content || ''
+  if (!isDiff.value || !rawContent) {
+    return {
+      ok: true,
+      files: [],
+      errorMessage: null,
+      rawContent
+    }
+  }
+
+  try {
+    return {
+      ok: true,
+      files: parseDiff(rawContent),
+      errorMessage: null,
+      rawContent
+    }
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : '未知解析错误'
+    console.error('[FilePreview] failed to parse diff content:', err)
+    return {
+      ok: false,
+      files: [],
+      errorMessage,
+      rawContent
+    }
+  }
 })
 
 const diffMode = ref<'side-by-side' | 'inline'>('side-by-side')
+const hasRenderableDiff = computed(() => parsedDiff.value.ok && parsedDiff.value.files.length > 0)
+const fallbackDiffMessage = computed(() => {
+  if (!parsedDiff.value.ok) {
+    return 'Diff 渲染失败，已回退为原始 Patch 文本'
+  }
+  return '未解析到可渲染的文件变更，已展示原始 Patch 文本'
+})
+
+const markdownRenderError = ref<Error | null>(null)
+const markdownFallbackMessage = computed(() => {
+  return 'Markdown 预览失败，已回退为原始文本'
+})
+
+watch(
+  () => [data.value?.filepath, data.value?.content],
+  () => {
+    markdownRenderError.value = null
+  }
+)
+
+onErrorCaptured((capturedError) => {
+  if (!isMarkdown.value) {
+    return
+  }
+  const normalizedError = capturedError instanceof Error
+    ? capturedError
+    : new Error(String(capturedError))
+  markdownRenderError.value = normalizedError
+  console.error('[FilePreview] failed to render markdown content:', capturedError)
+  return false
+})
 
 // --- Monaco Editor options ---
 
@@ -226,6 +299,13 @@ const editorOptions = computed(() => ({
 
 function toggleMaximize() {
   emit('maximize')
+}
+
+function getDiffFileKey(file: DiffFile): string {
+  const oldName = file.oldName || 'unknown-old'
+  const newName = file.newName || 'unknown-new'
+  const blockCount = Array.isArray(file.blocks) ? file.blocks.length : 0
+  return `${oldName}|${newName}|${blockCount}`
 }
 </script>
 
@@ -262,7 +342,7 @@ function toggleMaximize() {
       <div class="flex items-center gap-2 px-3 py-2 border-b border-default bg-elevated/30 text-sm shrink-0">
         <div class="flex items-center gap-2 flex-1 min-w-0">
           <UIcon :name="getFileIcon(data.language)" class="size-4 shrink-0 text-muted" />
-          <span class="truncate text-highlighted font-medium">{{ data.name }}</span>
+          <span class="truncate text-highlighted font-medium">{{ data.filepath }}</span>
           <template v-if="!embedded">
             <span v-if="data.language" class="text-xs text-muted bg-dimmed px-1.5 py-0.5 rounded">
               {{ getLanguageDisplay(data.language) }}
@@ -272,7 +352,7 @@ function toggleMaximize() {
         </div>
         <div class="flex items-center gap-1 shrink-0">
           <button
-            v-if="isDiff"
+            v-if="isDiff && hasRenderableDiff"
             class="inline-flex items-center justify-center size-7 rounded-md text-muted hover:text-highlighted hover:bg-elevated/50 transition-colors"
             title="切换对比模式"
             @click="diffMode = diffMode === 'side-by-side' ? 'inline' : 'side-by-side'"
@@ -299,25 +379,73 @@ function toggleMaximize() {
       <!-- Previewable content -->
       <template v-if="data.previewable">
         <!-- Markdown rendering -->
-        <div v-if="isMarkdown" class="flex-1 overflow-y-auto">
-          <div class="prose prose-sm dark:prose-invert max-w-none p-4">
-            <ChatComark :markdown="data.content || ''" />
+        <div v-if="isMarkdown" class="flex-1 min-h-0 flex flex-col">
+          <div v-if="!markdownRenderError" class="flex-1 overflow-y-auto">
+            <div class="prose prose-sm dark:prose-invert max-w-none p-4">
+              <ChatComark
+                :markdown="data.content || ''"
+                :plugins="[emoji(), binding(), breaks(), mermaid(), taskList(), toc({ depth: 2 }), highlight({ themes: { light: githubLight, dark: githubDark } })]"
+                :components="{ Binding, mermaid: Mermaid }"
+              />
+            </div>
+          </div>
+          <div v-else class="flex-1 min-h-0 flex flex-col">
+            <div class="mx-4 mt-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-warning text-sm">
+              <div class="flex items-start gap-2">
+                <UIcon name="i-lucide-triangle-alert" class="size-4 mt-0.5 shrink-0" />
+                <div class="min-w-0">
+                  <p>{{ markdownFallbackMessage }}</p>
+                  <p v-if="markdownRenderError.message" class="mt-1 text-xs text-muted truncate">
+                    渲染错误: {{ markdownRenderError.message }}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="flex-1 min-h-0 mt-3 overflow-hidden">
+              <VueMonacoEditor
+                :value="data.content || ''"
+                language="markdown"
+                :options="editorOptions"
+                :theme="($colorMode?.value === 'dark' ? 'vs-dark' : 'vs')"
+                class="h-full"
+              />
+            </div>
           </div>
         </div>
 
         <!-- Diff/Patch rendering -->
-        <div v-else-if="isDiff" class="flex-1 overflow-y-auto">
-          <div v-if="parsedFiles.length" class="flex flex-col gap-4 p-4">
-            <FileDiffFileCard
-              v-for="file in parsedFiles"
-              :key="file.oldName + ' -> ' + file.newName"
-              :file-diff="file"
-              :diff-mode="diffMode"
-            />
+        <div v-else-if="isDiff" class="flex-1 min-h-0 flex flex-col">
+          <div v-if="hasRenderableDiff" class="flex-1 overflow-y-auto">
+            <div class="flex flex-col gap-4 p-4">
+              <FileDiffFileCard
+                v-for="file in parsedDiff.files"
+                :key="getDiffFileKey(file)"
+                :file-diff="file"
+                :diff-mode="diffMode"
+              />
+            </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center gap-3 py-16 text-muted">
-            <UIcon name="i-lucide-file-x" class="size-8" />
-            <span class="text-sm">无法解析 Diff 内容</span>
+          <div v-else class="flex-1 min-h-0 flex flex-col">
+            <div class="mx-4 mt-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-warning text-sm">
+              <div class="flex items-start gap-2">
+                <UIcon name="i-lucide-triangle-alert" class="size-4 mt-0.5 shrink-0" />
+                <div class="min-w-0">
+                  <p>{{ fallbackDiffMessage }}</p>
+                  <p v-if="parsedDiff.errorMessage" class="mt-1 text-xs text-muted truncate">
+                    解析错误: {{ parsedDiff.errorMessage }}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="flex-1 min-h-0 mt-3 overflow-hidden">
+              <VueMonacoEditor
+                :value="parsedDiff.rawContent"
+                language="diff"
+                :options="editorOptions"
+                :theme="($colorMode?.value === 'dark' ? 'vs-dark' : 'vs')"
+                class="h-full"
+              />
+            </div>
           </div>
         </div>
 

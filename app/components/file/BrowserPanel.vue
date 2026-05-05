@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
+  title: string
   chatId: string
   open: boolean
   maximizedFile: string | null
@@ -95,46 +96,51 @@ function onMaximize() {
   <Transition name="slide">
     <div
       v-if="open"
-      class="h-full flex flex-col border-l border-default bg-default relative"
+      class="h-full shrink-0"
       :style="{ width: `${panelWidth}px` }"
     >
-      <!-- Drag handle (left edge) -->
       <div
-        class="absolute top-0 left-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
-        :class="{ 'bg-primary/50': isDragging }"
-        @mousedown="onMouseDown"
-      />
-
-      <!-- Panel header -->
-      <div class="flex items-center gap-2 px-3 py-2.5 border-b border-default bg-elevated/30 shrink-0">
-        <UIcon name="i-lucide-folder-tree" class="size-4 text-primary" />
-        <span class="text-sm font-medium text-highlighted">项目文件</span>
-        <div class="flex-1" />
-      </div>
-
-      <!-- File list section -->
-      <div class="flex-1 overflow-hidden">
-        <FileList
-          :chat-id="chatId"
-          :current-path="currentPath"
-          :selected-file-path="selectedFilePath"
-          @navigate="onNavigate"
-          @select-file="onSelectFile"
-        />
-      </div>
-
-      <!-- File preview section (hidden when current file is maximized in message area) -->
-      <div
-        v-if="selectedFilePath && maximizedFile !== selectedFilePath"
-        class="border-t border-default"
-        style="height: 40%"
+        class="fixed top-[calc(var(--ui-header-height)+1rem)] right-4 z-20 flex h-[calc(100vh-var(--ui-header-height)-2rem)] flex-col border-l border-default bg-default"
+        :style="{ width: `${panelWidth}px` }"
       >
-        <FilePreview
-          :chat-id="chatId"
-          :file-path="selectedFilePath"
-          :embedded="true"
-          @maximize="onMaximize"
+        <!-- Drag handle (left edge) -->
+        <div
+          class="absolute top-0 left-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
+          :class="{ 'bg-primary/50': isDragging }"
+          @mousedown="onMouseDown"
         />
+
+        <!-- Panel header -->
+        <div class="flex items-center gap-2 px-3 py-2.5 border-b border-default bg-elevated/30 shrink-0">
+          <UIcon name="i-lucide-folder-tree" class="size-4 text-primary" />
+          <span class="text-sm font-medium text-highlighted">{{ title }}</span>
+          <div class="flex-1" />
+        </div>
+
+        <!-- File list section -->
+        <div class="flex-1 overflow-hidden">
+          <FileList
+            :chat-id="chatId"
+            :current-path="currentPath"
+            :selected-file-path="selectedFilePath"
+            @navigate="onNavigate"
+            @select-file="onSelectFile"
+          />
+        </div>
+
+        <!-- File preview section (hidden when current file is maximized in message area) -->
+        <div
+          v-if="selectedFilePath && maximizedFile !== selectedFilePath"
+          class="border-t border-default"
+          style="height: 40%"
+        >
+          <FilePreview
+            :chat-id="chatId"
+            :file-path="selectedFilePath"
+            :embedded="true"
+            @maximize="onMaximize"
+          />
+        </div>
       </div>
     </div>
   </Transition>

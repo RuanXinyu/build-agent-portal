@@ -810,6 +810,42 @@ logs_store = dict(INITIAL_LOGS)
 _next_id = 7
 
 
+def _seed_extra_chats(min_count=80):
+    """Seed enough chats so pagination and scrolling can be tested reliably."""
+    global _next_id
+    if len(chats_store) >= min_count:
+        return
+
+    title_pool = [
+        "构建失败排查",
+        "前端样式优化",
+        "接口联调记录",
+        "发布流程确认",
+        "性能分析报告",
+        "日志采样讨论",
+        "测试用例补全",
+        "需求评审纪要",
+    ]
+
+    base_time = datetime.now(timezone.utc) - timedelta(days=8)
+    while len(chats_store) < min_count:
+        chat_id = f"mock-{_next_id}"
+        title = f"{random.choice(title_pool)} #{_next_id}"
+        created_dt = base_time - timedelta(minutes=30 * (_next_id - 7))
+        chats_store.append({
+            "id": chat_id,
+            "chat_id": chat_id,
+            "title": title,
+            "userId": "user-1",
+            "createdAt": _iso(created_dt),
+        })
+        logs_store.setdefault(chat_id, [])
+        _next_id += 1
+
+
+_seed_extra_chats()
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -817,6 +853,38 @@ _next_id = 7
 def get_all_chats():
     """Return all chats sorted by createdAt descending."""
     return sorted(chats_store, key=lambda c: c["createdAt"], reverse=True)
+
+
+def get_chats_page(page=1, page_size=20):
+    """Return paginated chats with metadata."""
+    if not isinstance(page, int):
+        page = 1
+    if not isinstance(page_size, int):
+        page_size = 20
+
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
+
+    all_chats = get_all_chats()
+    total = len(all_chats)
+    total_pages = max((total + page_size - 1) // page_size, 1)
+
+    page = min(page, total_pages)
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = all_chats[start:end]
+
+    return {
+        "items": items,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1,
+        },
+    }
 
 
 def get_chat(chat_id):

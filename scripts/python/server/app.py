@@ -6,7 +6,7 @@ import uuid
 from flask import Flask, jsonify, make_response, request, Response, send_file
 from flask_cors import CORS
 from io import BytesIO
-from mock_data import get_all_chats, get_chat, create_or_continue_chat
+from mock_data import get_all_chats, get_chats_page, get_chat, create_or_continue_chat
 from file_mock_data import list_directory, get_file_content, file_exists
 
 app = Flask(__name__)
@@ -54,8 +54,27 @@ def validate_xauth_token():
 @app.route("/buildagent/v1/agent/chats", methods=["GET"])
 def list_chats():
     """会话列表"""
+    page = request.args.get("page", type=int)
+    page_size = request.args.get("page_size", type=int)
+    limit = request.args.get("limit", type=int)
+
+    # Keep backward compatibility:
+    # - no pagination params -> return full list as before
+    # - with pagination params -> return current page + pagination metadata
+    if page is None and page_size is None and limit is None:
+        return jsonify({
+            "data": get_all_chats()
+        })
+
+    if page is None:
+        page = 1
+    if page_size is None:
+        page_size = limit if limit is not None else 20
+
+    result = get_chats_page(page=page, page_size=page_size)
     return jsonify({
-        "data": get_all_chats()
+        "data": result["items"],
+        "pagination": result["pagination"]
     })
 
 

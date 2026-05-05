@@ -25,20 +25,28 @@ async function createQuickChat(prompt: string) {
 }
 
 async function createChat(prompt: string) {
-  input.value = prompt
+  const trimmedPrompt = prompt.trim()
+  if (!trimmedPrompt) return
+
+  input.value = trimmedPrompt
   loading.value = true
 
   try {
-    const result = await $fetch<{ chat_id: string; message_id: string }>('/api/v1/agent/chats', {
+    const result = await $fetch<{ chat_id?: string; chatId?: string; id?: string }>('/api/v1/agent/chats', {
       method: 'POST',
       headers: { [headerName]: csrf },
       body: {
-        prompt: prompt,
+        prompt: trimmedPrompt,
       }
     })
 
+    const chatId = result.chat_id ?? result.chatId ?? result.id
+    if (!chatId) {
+      throw new Error('创建会话失败：未返回有效 chat_id')
+    }
+
     refreshNuxtData('chats')
-    navigateTo(`/chat/${result.chat_id}`)
+    await navigateTo(`/chat/${chatId}`)
   } catch (error: any) {
     loading.value = false
     if (error?.statusCode !== 401) {

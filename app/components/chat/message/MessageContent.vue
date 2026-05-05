@@ -2,6 +2,15 @@
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import type { UIMessage } from 'ai'
 import { isPartStreaming, isToolStreaming } from '@nuxt/ui/utils/ai'
+import emoji from '@comark/vue/plugins/emoji'
+import binding, { Binding } from '@comark/vue/plugins/binding'
+import breaks from '@comark/vue/plugins/breaks'
+import mermaid, { Mermaid } from '@comark/vue/plugins/mermaid'
+import taskList from '@comark/vue/plugins/task-list'
+import toc from '@comark/vue/plugins/toc'
+import highlight from '@comark/vue/plugins/highlight'
+import githubLight from '@shikijs/themes/github-light'
+import githubDark from '@shikijs/themes/github-dark'
 
 defineProps<{
   message: UIMessage
@@ -19,6 +28,9 @@ defineProps<{
       <ChatComark
         :markdown="part.text"
         :streaming="isPartStreaming(part)"
+        :plugins="[emoji(), binding(), breaks(), mermaid(), taskList(), toc({ depth: 2}), highlight({ themes: { light: githubLight, dark: githubDark } })]"
+        :components="{ Binding, mermaid: Mermaid }"
+        />
       />
     </UChatReasoning>
 
@@ -47,6 +59,8 @@ defineProps<{
         v-if="message.role === 'assistant'"
         :markdown="part.text"
         :streaming="isPartStreaming(part)"
+        :plugins="[emoji(), binding(), breaks(), mermaid(), taskList(), toc({ depth: 2}), highlight({ themes: { light: githubLight, dark: githubDark } })]"
+        :components="{ Binding, mermaid: Mermaid }"
       />
       <template v-else-if="message.role === 'user'">
         <p class="whitespace-pre-wrap">

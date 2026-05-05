@@ -14,7 +14,8 @@
       "mcp__nuxt-ui-remote__search-components",
       "mcp__nuxt-ui-remote__get-component",
       "WebSearch",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(node:*)"
     ]
   }
 }

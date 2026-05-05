@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
-import { Diff2Html } from 'diff2html'
+import { parse as parseDiff } from 'diff2html'
 
 interface FileContentResponse {
   filepath: string
@@ -191,7 +191,7 @@ const downloadUrl = computed(() => {
 
 const parsedFiles = computed(() => {
   if (!isDiff.value || !data.value?.content) return []
-  return Diff2Html.parse(data.value.content)
+  return parseDiff(data.value.content)
 })
 
 const diffMode = ref<'side-by-side' | 'inline'>('side-by-side')
